@@ -1,16 +1,10 @@
-# 模板语法
-
-所谓模板，是 Vue 中构建视图的地方。
-
-模板的写法基本上和 HTML 是一模一样的，上手无难度。
-
-不过这个之所以被称之为模板，就是因为这个和之前的模板引擎类似，提供了一些不同于纯 HTML 的特性。
+# 响应式基础
 
 
 
-## 文本插值
+## 使用ref
 
-可以在模板里面使用一对大括号（双大括号、猫须语法），括号内部就可以绑定动态的数据。
+可以使用 ref 创建一个响应式的数据：
 
 ```vue
 <template>
@@ -18,48 +12,61 @@
 </template>
 
 <script setup>
-const name = 'Steve'
+import { ref } from 'vue'
+// 现在的 name 就是一个响应式数据
+let name = ref('Bill')
+console.log(name)
+console.log(name.value)
+setTimeout(() => {
+  name.value = 'Tom'
+}, 2000)
 </script>
 
 <style lang="scss" scoped></style>
-
 ```
 
+ref 返回的响应式数据是一个对象，我们需要通过 .value 访问到内部具体的值。模板中之所以不需要 .value，是因为在模板会对 ref 类型的响应式数据自动解包。
 
+ref 可以持有任意的类型，可以是对象、数组、普通类型的值、Map、Set...
 
-## 原始HTML
-
-有些时候，变量的值对应的是一段 HTML 代码，但是普通的文本插值只会将这段 HTML 代码原封不动的输出
-
-例如：
+对象的例子：
 
 ```vue
 <template>
-  <div>{{ htmlCode }}</div>
+  <div>{{ Bill.name }}</div>
+  <div>{{ Bill.age }}</div>
 </template>
 
 <script setup>
-const htmlCode = '<span style="color:red">this is a test</span>'
+import { ref } from 'vue'
+// 现在的 name 就是一个响应式数据
+let Bill = ref({
+  name: 'Biil',
+  age: 18
+})
+setTimeout(() => {
+  Bill.value.name = 'Biil2'
+  Bill.value.age = 20
+}, 2000)
 </script>
 
 <style lang="scss" scoped></style>
 ```
 
-如果想要让上面的 HTML 字符串以 HTML 的形式渲染出来，那么需要指令。
-
-指令是带有 v- 前缀的特殊属性。Vue 提供了一部分内置指令，开发者还可以自定义指令。
-
-Vue 中所有内置的指令：https://cn.vuejs.org/api/built-in-directives.html
-
-这里我们需要用到 v-html 的指令，例如：
+数组的例子：
 
 ```vue
 <template>
-  <div v-html="htmlCode"></div>
+  <div>{{ arr }}</div>
 </template>
 
 <script setup>
-const htmlCode = '<span style="color:red">this is a test</span>'
+import { ref } from 'vue'
+// 现在的 name 就是一个响应式数据
+let arr = ref([1, 2, 3])
+setTimeout(() => {
+  arr.value.push(4, 5, 6)
+}, 2000)
 </script>
 
 <style lang="scss" scoped></style>
@@ -67,180 +74,509 @@ const htmlCode = '<span style="color:red">this is a test</span>'
 
 
 
-## 绑定属性
-
-Vue 中的核心思想，就是将模板中所有的东西都通过数据来控制，除了普通文本以外，属性应该由数据来控制，这就是所谓的属性绑定。
-
-例如：
+第二个点，ref 所创建的响应式数据是具备深层响应式，这一点主要体现在值是对象，对象里面又有嵌套的对象：
 
 ```vue
 <template>
-  <div v-bind:id="id">hello</div>
+  <div>{{ Bill.name }}</div>
+  <div>{{ Bill.age }}</div>
+  <div>{{ Bill.nested.count }}</div>
 </template>
 
 <script setup>
-const id = 'my-id'
+import { ref } from 'vue'
+// 现在的 name 就是一个响应式数据
+let Bill = ref({
+  name: 'Biil',
+  age: 18,
+  nested: {
+    count: 1
+  }
+})
+setTimeout(() => {
+  Bill.value.name = 'Biil2'
+  Bill.value.age = 20
+  Bill.value.nested.count += 2
+}, 2000)
 </script>
 
 <style lang="scss" scoped></style>
 ```
 
-属性的动态绑定用得非常的多，因此有一种简写形式，直接用一个冒号（ : ）表示该属性是动态绑定的
-
-```vue
-<template>
-  <div :id="id">hello</div>
-</template>
-
-<script setup>
-const id = 'my-id'
-</script>
-
-<style lang="scss" scoped></style>
-```
-
-另外还有一种简写形式，这种形式 **<u>Vue3.4 以上版本才能用</u>**，如果动态绑定的属性和数据同名，那么可以直接简写：
-
-```vue
-<template>
-  <div :id>hello</div>
-</template>
-
-<script setup>
-const id = 'my-id'
-</script>
-
-<style lang="scss" scoped></style>
-```
-
-
-
-在 HTML 中，有一类属性是比较特殊的，就是布尔类型属性，例如 disabled，针对这一类布尔属性，绑定的数据不同，会有不同的表现
-
-- 如果所绑定的数据是真值或者空字符串，该布尔值属性会存在
-- 如果所绑定的数据是假值（null 和 undefined），该布尔值属性会被忽略
-
-
-
-有些时候，如果想要绑定多个属性，那么这个时候可以直接绑定成一个对象：
-
-```vue
-<template>
-  <div v-bind="attrObj">hello</div>
-</template>
-
-<script setup>
-const attrObj = {
-  id: 'container',
-  class: 'wrapper'
-}
-</script>
-
-<style lang="scss" scoped></style>
-```
-
-
-
-## 使用JS表达式
-
-目前为止，模板可以绑定数据，但是目前数据是什么，模板中就渲染什么。
-
-但是实际上模板中是可以对要渲染的数据进行一定处理的，通过 JavaScript 表达式来进行处理。
-
-```vue
-<template>
-  <div>{{ number + 1 }}</div>
-  <div>{{ ok ? '晴天' : '雨天' }}</div>
-  <div>{{ message.split('').reverse().join('') }}</div>
-  <div :id="`list-${id}`">{{ id + 100 }}</div>
-</template>
-
-<script setup>
-const number = 1
-const ok = true
-const message = 'hello'
-const id = 1
-</script>
-
-<style lang="scss" scoped></style>
-```
-
-这里有一个关键点，就是你要区分什么是表达式，什么是语句
-
-```vue
-<!-- 这是一个语句，而非表达式 -->
-{{ var a = 1 }}
-<!-- 条件控制也不支持，请使用三元表达式 -->
-{{ if (ok) { return message } }}
-```
-
-有一个简单的判断方法：看是否能够写在 return 后面。如果能够写在 return 后面，那么就是表达式，如果不能那么就是语句。
-
-例如函数调用，其实就是一个表达式
+如果想要放弃深层次的响应式，可以使用 shallowRef，通过 shallowRef 所创建的响应式，不会深层地递归将对象每一层转为响应式，而只会将 .value 的访问转为响应式：
 
 ```js
-return test();
+const state = shallowRef({ count: 1});
+// 这个操作不会触发响应式更新
+state.value.count += 2;
+// 只针对 .value 值的更改会触发响应式更新
+state.value = { count: 2}
 ```
 
-```vue
-{{ test() }}
-```
-
-
-
-## 模板沙盒化
-
-模板中可以使用表达式，这些表达式都是沙盒化的，沙盒的意义主要在于安全，这里在模板中能够访问到全局对象，但是由于沙盒的存在，对能够访问到的全局对象进行了限制，只能访问 [部分的全局对象](https://github.com/vuejs/core/blob/main/packages/shared/src/globalsAllowList.ts#L3)
+具体示例：
 
 ```vue
 <template>
-  <div>{{ Math.random() }}</div>
+  <div>{{ Bill.name }}</div>
+  <div>{{ Bill.age }}</div>
+  <div>{{ Bill.nested.count }}</div>
 </template>
 
-<script setup></script>
+<script setup>
+import { shallowRef } from 'vue'
+let Bill = shallowRef({
+  name: 'Biil',
+  age: 18,
+  nested: {
+    count: 1
+  }
+})
+// 下面的更新不会触发视图更新
+setTimeout(() => {
+  Bill.value.name = 'Biil2'
+  Bill.value.age = 20
+  Bill.value.nested.count += 2
+}, 2000)
+// 下面的更新会触发视图更新
+setTimeout(() => {
+  Bill.value = {
+    name: 'Biil3',
+    age: 30,
+    nested: {
+      count: 3
+    }
+  }
+}, 4000)
+</script>
 
 <style lang="scss" scoped></style>
 ```
 
-但是如果是不在上述列表中的，则无法访问到：
+
+
+响应式数据的更新，带来了 DOM 的自动更新，但是这个 DOM 的更新并非是同步的，这意味着当响应式数据发生修改后，我们去获取 DOM 值，拿到的是之前的 DOM 数据：
 
 ```vue
 <template>
-  <div>{{ Math.random() }}</div>
-  <div>{{ Test.a }}</div>
+  <div id="container">{{ count }}</div>
 </template>
 
 <script setup>
-window.Test = {
-  a: 1
+import { ref, onMounted } from 'vue'
+let count = ref(1)
+let container = null
+setTimeout(() => {
+  count.value = 2 // 修改响应式状态
+  console.log('第二次打印：', container.innerText)
+}, 2000)
+// 这是一个生命周期钩子方法
+// 会在组件完成初始渲染并创建 DOM 节点后自动调用
+onMounted(() => {
+  container = document.getElementById('container')
+  console.log('第一次打印：', container.innerText)
+})
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+如果想要获取最新的 DOM 数据，可以使用 nextTick，这是 Vue 提供的一个工具方法，会等待下一次的 DOM 更新，从而方便后面能够拿到最新的 DOM 数据。
+
+```vue
+<template>
+  <div id="container">{{ count }}</div>
+</template>
+
+<script setup>
+import { ref, onMounted, nextTick } from 'vue'
+let count = ref(1)
+let container = null
+setTimeout(async () => {
+  count.value = 2 // 修改响应式状态
+  // 等待下一个 DOM 更新周期
+  await nextTick()
+  // 这个时候再打印就是最新的值了
+  console.log('第二次打印：', container.innerText)
+}, 2000)
+// 这是一个生命周期钩子方法
+// 会在组件完成初始渲染并创建 DOM 节点后自动调用
+onMounted(() => {
+  container = document.getElementById('container')
+  console.log('第一次打印：', container.innerText)
+})
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+如果不用 async await，那么就是通过回调的形式：
+
+```js
+setTimeout(() => {
+  count.value = 2 // 修改响应式状态
+  // 等待下一个 DOM 更新周期
+  nextTick(() => {
+    // 这个时候再打印就是最新的值了
+    console.log('第二次打印：', container.innerText)
+  })
+}, 2000)
+```
+
+当然还是推荐使用 async await，看上去代码的逻辑更加清晰一些。
+
+
+
+## 使用 reactive
+
+reactive 通常将一个对象转为响应式对象
+
+```vue
+<template>
+  <div>{{ state.count1 }}</div>
+  <div>{{ state.nested.count2 }}</div>
+</template>
+
+<script setup>
+import { reactive } from 'vue'
+const state = reactive({
+  count1: 0,
+  nested: {
+    count2: 0
+  }
+})
+setTimeout(()=>{
+  state.count1++
+  state.nested.count2 += 2;
+},2000);
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+Vue 中的响应式底层是通过 ProxyAPI 来实现的，但是这个 ProxyAPI 只能对对象进行拦截，无法对原始值进行拦截。
+
+这里就会产生一个问题：如果用户想要把一个原始值转为响应式，该怎么办？
+
+两种方案：
+
+1. 让用户自己处理，用户需要将自己想要转换的原始值包装为对象，然后再使用 reactive API 🙅
+2. 框架层面来处理，多提供一个 API，这个 API 可以帮助用户简化操作，将原始值也能转为响应式数据 🙆
+
+ref 的背后其实也调用了 reactive API
+
+- 原始值：Object.defineProperty
+- 复杂值：reactive API
+
+
+
+reactive 还有一个相关的 API shallowReactiveAPI，是浅层次的，不会深层次去转换成响应式
+
+```vue
+<template>
+  <div>{{ state.count1 }}</div>
+  <div>{{ state.nested.count2 }}</div>
+</template>
+
+<script setup>
+import { shallowReactive } from 'vue'
+const state = shallowReactive({
+  count1: 0,
+  nested: {
+    count2: 0
+  }
+})
+setTimeout(()=>{
+  state.count1++
+},2000);
+setTimeout(()=>{
+  state.nested.count2++
+},4000)
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+
+
+## 使用细节
+
+先说最佳实践：尽量使用 ref 来作为声明响应式数据的主要 API.
+
+
+
+### reactive局限性
+
+1. 使用 reactvie 创建响应式数据的时候，值的类型是有限的
+   - 只能是对象类型（object、array、map、set）
+   - 不能够是简单值（string、number、boolean）
+2. 第二条算是一个注意点，不能够去替换响应式对象，否则会丢失响应式的追踪
+
+```js
+let state = reactive({count : 0});
+// 下面的这个操作会让上面的对象引用不再被追踪，从而导致上面对象的响应式丢失
+state = reactive({count : 1})
+```
+
+3. 对解构操作不友好，当对一个 reactvie 响应式对象进行解构的时候，也会丢失响应式
+
+```js
+let state = reactive({count : 0});
+// 当进行解构的时候，解构出来的是一个普通的值
+let { count } = state;
+count++; // 这里也就是单纯的值的改变，不会触发和响应式数据关联的操作
+
+// 另外还有函数传参的时候
+// 这里传递过去的也就是一个普通的值，没有响应式
+func(state.count)
+```
+
+
+
+### ref解包细节
+
+所谓 ref 的解包，指的是自动访问 value，不需要再通过 .value 去获取值。例如模板中使用 ref 类型的数据，就会自动解包。
+
+1. ref作为reactvie对象属性
+
+这种情况下也会自动解包
+
+```vue
+<template>
+  <div></div>
+</template>
+
+<script setup>
+import { ref, reactive } from 'vue'
+const name = ref('Bill')
+const state = reactive({
+  name
+})
+console.log(state.name) // 这里会自动解包
+console.log(name.value)
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+如果 ref 作为 shallowReactive 对象的属性，那么不会自动解包
+
+```vue
+<template>
+  <div></div>
+</template>
+
+<script setup>
+import { ref, shallowReactive } from 'vue'
+const name = ref('Bill')
+const state = shallowReactive({
+  name
+})
+console.log(state.name.value) // 不会自动解包
+console.log(name.value)
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+因为对象的属性是一个 ref 值，这也是一个响应式数据，因此 ref 的变化会引起响应式对象的更新
+
+```vue
+<template>
+  <div>
+    <div>{{ state.name.value }}</div>
+  </div>
+</template>
+
+<script setup>
+import { ref, shallowReactive } from 'vue'
+const name = ref('Bill')
+const state = shallowReactive({
+  name
+})
+setTimeout(() => {
+  name.value = 'Tom'
+},2000)
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+【课堂练习】下面的代码：
+
+1. 为什么 Bill 渲染出来有双引号？
+2. 为什么 2 秒后界面没有渲染 Smith ？
+
+```vue
+<template>
+  <div>{{ obj.name }}</div>
+</template>
+
+<script setup>
+import { ref, shallowReactive } from 'vue'
+const name = ref('Bill') // name 是一个 ref 值
+const obj = shallowReactive({
+  name
+})
+setTimeout(() => {
+  obj.name = 'John'
+}, 1000)
+setTimeout(() => {
+  name.value = 'Smith'
+}, 2000)
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+答案：
+
+1. 因为使用的是 shallowReactive，shallowReactive 内部的 ref 是不会自动解包的
+2. 1秒后，obj.name 被赋予了 John 这个字符串值，这就使得和原来的 ref 数据失去了联系
+
+如果想要渲染出 Smith，修改如下：
+
+```js
+import { ref, shallowReactive } from 'vue'
+const name = ref('Bill') // name 是一个 ref 值
+const obj = shallowReactive({
+  name
+})
+setTimeout(() => {
+  obj.name.value = 'John'
+}, 1000)
+setTimeout(() => {
+  name.value = 'Smith'
+}, 2000)
+```
+
+下面再来看一个例子：
+
+```vue
+<template>
+  <div>{{ obj.name.value }}</div>
+</template>
+
+<script setup>
+import { ref, shallowReactive } from 'vue'
+const name = ref('Bill');
+const stuName = ref('John');
+
+const obj = shallowReactive({name})
+
+// 注意这句代码，意味着和原来的 name 这个 Ref 失去关联
+obj.name = stuName;
+
+setTimeout(()=>{
+  name.value = 'Tom';
+}, 2000)
+
+setTimeout(()=>{
+  stuName.value = 'Smith';
+}, 4000)
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+
+
+2. 数组和集合里面使用 ref
+
+如果将 ref 数据作为 reactvie 数组或者集合的一个元素，此时是**不会自动解包的**
+
+```js
+// 下面这些是官方所给的例子
+const books = reactive([ref('Vue 3 Guide')])
+// 这里需要 .value
+console.log(books[0].value)
+
+const map = reactive(new Map([['count', ref(0)]]))
+// 这里需要 .value
+console.log(map.get('count').value)
+```
+
+```vue
+<template>
+  <div></div>
+</template>
+
+<script setup>
+import { ref, reactive } from 'vue'
+const name = ref('Bill')
+const score = ref(100)
+const state = reactive({
+  name,
+  scores: [score]
+})
+console.log(state.name) // 会自动解包
+console.log(state.scores[0]) // 不会自动解包
+console.log(state.scores[0].value) // 100
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+
+
+3. 在模板中的自动解包
+
+在模板里面，只有顶级的 ref 才会自动解包。
+
+```vue
+<template>
+  <div>
+    <div>{{ count }}</div>
+    <div>{{ object.id }}</div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+const count = ref(0) // 顶级的 Ref 自动解包
+const object = {
+  id: ref(1) // 这就是一个非顶级 Ref 不会自动解包
 }
 </script>
 
 <style lang="scss" scoped></style>
 ```
 
-在上面的例子中，我们尝试给 window 挂载一个新的全局对象，然后在模板中进行访问，但是会报错：Cannot read properties of undefined (reading 'a')
+上面的例子，感觉非顶级的 Ref 好像也能够正常渲染出来，仿佛也是自动解包了的。
 
-如果真的有此需求，需要在 window 上挂载一个全局对象供模板访问，可以使用 app.config.globalProperties，例如：
+但是实际情况并非如此。
 
-```js
-// main.js
-// import './assets/main.css'
+```vue
+<template>
+  <div>
+    <div>{{ count + 1 }}</div>
+    <div>{{ object.id + 1 }}</div>
+  </div>
+</template>
 
-import { createApp } from 'vue'
-// 引入了根组件
-import App from './App.vue'
-
-// 挂载根组件
-const app = createApp(App)
-
-// 在这里新增全局对象属性
-app.config.globalProperties.Test = {
-  a: 'Hello, Global Object!'
+<script setup>
+import { ref } from 'vue'
+const count = ref(0) // 顶级的 Ref 自动解包
+const object = {
+  id: ref(1) // 这就是一个非顶级 Ref 不会自动解包
 }
+</script>
 
-app.mount('#app')
+<style lang="scss" scoped></style>
+```
 
+例如我们在模板中各自加 1 就会发现上面因为已经解包出来了，所以能够正常的进行表达式的计算。
+
+但是下面因为没有解包，意味着 object.id 仍然是一个对象，因此最终计算的结果为 [object Object]1
+
+因此要访问 object.id 的值，没有自动解包我们就手动访问一下 value
+
+```vue
+<template>
+  <div>
+    <div>{{ count + 1 }}</div>
+    <div>{{ object.id.value + 1 }}</div>
+  </div>
+</template>
 ```
 
 ---
