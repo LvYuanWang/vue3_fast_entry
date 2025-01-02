@@ -1,180 +1,226 @@
-# 响应式常用API
+# 计算属性
 
-- ref 相关：toRef、toRefs、unRef
-- 只读代理：readonly
-- 判断相关：isRef、isReactive、isProxy、isReadonly
-- 3.3新增API：toValue
+模板表达式：
 
-## ref相关
+```vue
+<template>
+<span>Name: {{ author.name }}</span>
+  <p>Has published books:</p>
+  <span>{{ author.books.length > 0 ? 'Yes' : 'No' }}</span>
+</template>
 
-toRef：基于响应式对象的某一个属性，将其转换为 ref 值
-
-```js
-import { reactive, toRef } from 'vue'
-const state = reactive({
-  count: 0
+<script setup>
+import { reactive } from 'vue'
+const author = reactive({
+  name: 'John Doe',
+  books: ['Vue 2 - Advanced Guide', 'Vue 3 - Basic Guide', 'Vue 4 - The Mystery']
 })
-const countRef = toRef(state, 'count')
-// 这里其实就等价于 ref(state.count)
-console.log(countRef)
-console.log(countRef.value)
+</script>
+
+<style lang="scss" scoped></style>
 ```
 
-```js
-import { reactive, isReactive, toRef } from 'vue'
-const state = reactive({
-  count: {
-    value: 0
+在上面的例子中，我们之所以要使用模板表达式，是因为要渲染的数据和模板之间，并非简单的对应关系，需要进行二次处理之后，才能够在模板上使用。
+
+虽然在上面的例子中，使用模板表达式能够解决上面的需求（对数据做二次处理的需求），但是也存在一些问题：
+
+1. 因为只能写表达式，不能够写语句，所以这意味着无法支持复杂的运算
+2. 将计算逻辑写在模板里面，模板显得非常的臃肿
+3. 相同的计算逻辑要在模板中出现多次，难以维护，计算逻辑理应是能够复用的
+
+因此，正因为有上面的这些问题，所以计算属性登场了。
+
+
+
+## 基本使用
+
+基本使用代码如下：
+
+```vue
+<template>
+  <span>Name: {{ author.name }}</span>
+  <p>Has published books:</p>
+  <span>{{ isPublishBook }}</span>
+</template>
+
+<script setup>
+import { reactive, computed } from 'vue'
+const author = reactive({
+  name: 'John Doe',
+  books: ['Vue 2 - Advanced Guide', 'Vue 3 - Basic Guide', 'Vue 4 - The Mystery']
+})
+
+const isPublishBook = computed(() => {
+  // 在计算属性里面，我们就对数据进行二次处理
+  return author.books.length > 0 ? 'Yes' : 'No'
+})
+
+// 计算属性也是响应式，当依赖的数据发生变化，那么计算属性也会重新计算
+setTimeout(() => {
+  author.books = []
+}, 2000)
+</script>
+
+<style lang="scss" scoped></style>
+```
+
+总结一下，计算属性一般就是对响应式数据进行二次计算，返回一个计算属性的 ref，该 ref 可以在模板中使用。如果所依赖的响应式数据发生了变化，那么该计算属性会重新进行计算。
+
+
+
+## 可写计算属性
+
+一般来讲，计算属性就是对某个响应式数据进行二次计算，之后在模板中读取计算属性的值，这是绝大多数的场景下的使用，因此计算属性默认也就是只读模式。
+
+但是，计算属性是支持可写的模式，需要往 computed 方法中传递一个对象，该对象中有对应的 getter 和 setter：
+
+```vue
+<template>
+  <span>name:{{ fullName }}</span>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+const firstName = ref('Xie')
+const lastName = ref('Jie')
+
+const fullName = computed({
+  // 在读取计算属性值的时候会触发
+  get() {
+    return firstName.value + ' ' + lastName.value
+  },
+  // 在设置计算属性值的时候会触发
+  set(newName) {
+    ;[firstName.value, lastName.value] = newName.split(' ')
   }
 })
-console.log(isReactive(state)) // true
-console.log(isReactive(state.count)) // true
-const countRef = toRef(state, 'count')
-// 相当于 ref(state.count)
-console.log(countRef)
-console.log(countRef.value)
-console.log(countRef.value.value)
-```
 
-toRefs：将一个响应式对象转为一个普通对象，普通对象的每一个属性对应的是一个 ref 值
+// 接下来可能因为某种原因，要设置计算属性
+setTimeout(() => {
+  // 这里就涉及到了设置计算属性
+  fullName.value = 'Zhang San'
+}, 3000)
+</script>
 
-```js
-import { reactive, toRefs } from 'vue'
-const state = reactive({
-  count: 0,
-  message: 'hello'
-})
-const stateRefs = toRefs(state)
-console.log(stateRefs) // {count: RefImpl, message: RefImpl}
-console.log(stateRefs.count.value)
-console.log(stateRefs.message.value)
-```
-
-unRef: 如果参数给的是一个 ref 值，那么就返回内部的值，如果不是 ref，那么就返回参数本身
-
-这个 API 实际上是一个语法糖： val = isRef(val) ? val.value : val
-
-```js
-import { ref, unref } from 'vue'
-const countRef = ref(10)
-const normalValue = 20
-
-console.log(unref(countRef)) // 10
-console.log(unref(normalValue)) // 20
+<style lang="scss" scoped></style>
 ```
 
 
 
-## 只读代理
+## 最佳实践
 
-接收一个对象（不论是响应式的还是普通的）或者一个 ref，返回一个原来值的只读代理。
+1. Getter 不应该有副作用
 
-```js
-import { ref, readonly } from 'vue'
-const count = ref(0)
-const count2 = readonly(count) // 相当于创建了一个 count 的只读版本
-count.value++;
-count2.value++; // 会给出警告
-```
+现实生活中，也有使用“副作用”这个词的场景。
 
-在某些场景下，我们就是希望一些数据只能读取不能修改
+现实生活中的副作用指的就是“不期待的效果，但是它发生了”。
+
+程序中的副作用也是类似的意思：
 
 ```js
-const rawConfig = {
-  apiEndpoint: 'https://api.example.com',
-  timeout: 5000
-};
-// 例如在这个场景下，我们就期望这个配置对象是不能够修改的
-const config = readonly(rawConfig)
-```
-
-
-
-
-
-## 判断相关
-
-isRef 和 isReactive
-
-```js
-import { ref, shallowRef, reactive, shallowReactive, isRef, isReactive } from 'vue'
-const obj = {
-  a:1,
-  b:2,
-  c: {
-    d:3,
-    e:4
-  }
+function effect(){
+  document.body.innerText = 'hello';
 }
-const state1 = ref(obj)
-const state2 = shallowRef(obj)
-const state3 = reactive(obj)
-const state4 = shallowReactive(obj)
-console.log(isRef(state1)) // true
-console.log(isRef(state2)) // true
-console.log(isRef(state1.value.c)) // false
-console.log(isRef(state2.value.c)) // false
-console.log(isReactive(state1.value.c)) // true
-console.log(isReactive(state2.value.c)) // false
-console.log(isReactive(state3)) // true
-console.log(isReactive(state4)) // true
-console.log(isReactive(state3.c)) // true
-console.log(isReactive(state4.c)) // false
 ```
 
+在上面的例子中，effect 函数内部修改了 document.body 的值，这就直接或者间接影响了其他函数（可能也需要读取 document.body 的值）的执行结果，这个时候我们就称 effect 函数是有副作用。
 
-
-isProxy: 检查一个对象是否由 reactive、readonly、shallowReactive、shallowReadonly 创建的代理
+再比如，一个函数修改了全局变量，也是一个副作用操作：
 
 ```js
-import { reactive, readonly, shallowReactive, shallowReadonly, isProxy } from 'vue'
-// 创建 reactive 代理对象
-const reactiveObject = reactive({ message: 'Hello' })
-// 创建 readonly 代理对象
-const readonlyObject = readonly({ message: 'Hello' })
-// 创建 shallowReactive 代理对象
-const shallowReactiveObject = shallowReactive({ message: 'Hello' })
-// 创建 shallowReadonly 代理对象
-const shallowReadonlyObject = shallowReadonly({ message: 'Hello' })
-// 创建普通对象
-const normalObject = { message: 'Hello' }
-
-console.log(isProxy(reactiveObject)) // true
-console.log(isProxy(readonlyObject)) // true
-console.log(isProxy(shallowReactiveObject)) // true
-console.log(isProxy(shallowReadonlyObject)) // true
-console.log(isProxy(normalObject)) // false
+let val = 1;
+function effect(){
+  val = 2; // 修改全局变量，产生副作用
+}
 ```
 
+常见的副作用操作还有很多：
+
+- 调用系统 I/O 的 API
+- 发送网络请求
+- 在函数体内修改外部变量的值
+- 使用 console.log 等方法进行输出
+- 调用存在副作用的函数
+
+回到 Vue 中的计算属性，一个计算属性的声明中应该描述的是根据一个值派生另外一个值，不应该改变其他的状态，也不应该在 getter 中做诸如异步请求、更改DOM一类的操作。
 
 
-## 3.3新增API
 
-toValue
+2. 避免直接修改计算属性的值
 
-这个 API 和前面介绍的 unref 比较相似
+绝大多数场景下，都应该是读取计算属性的值，而非设置计算属性的值。
 
-```js
-import { ref, toValue } from 'vue'
-const countRef = ref(10)
-const normalValue = 20
+>从计算属性返回的值是**派生状态**。可以把它看作是一个“临时快照”，每当源状态发生变化时，就会创建一个新的快照。更改快照是没有意义的，因此计算属性的返回值应该被视为只读的，并且永远不应该被更改——应该更新它所依赖的源状态以触发新的计算。
 
-console.log(toValue(countRef)) // 10
-console.log(toValue(normalValue)) // 20
+
+
+## 计算属性和方法
+
+除了计算属性以外，我们还可以定义方法：
+
+```vue
+<template>
+  <span>Name: {{ author.name }}</span>
+  <p>Has published books:</p>
+  <span>{{ isPublishBook() }}</span>
+</template>
+
+<script setup>
+import { reactive } from 'vue'
+const author = reactive({
+  name: 'John Doe',
+  books: ['Vue 2 - Advanced Guide', 'Vue 3 - Basic Guide', 'Vue 4 - The Mystery']
+})
+
+function isPublishBook() {
+  return author.books.length > 0 ? 'Yes' : 'No'
+}
+</script>
+
+<style lang="scss" scoped></style>
 ```
 
-toValue 相比 unref 更加灵活一些，它支持传入 getter 函数，并且返回函数的执行结果
+计算属性依赖于响应式数据，然后对响应式数据进行二次计算。只有在响应式数据发生变化的时候，才会重新计算，换句话说，计算属性会缓存所计算的值。
 
-```js
-import { ref, toValue } from 'vue'
-const countRef = ref(10)
-const normalValue = 20
-const getter = ()=>30;
+而方法在重新渲染的时候，每次都是重新调用。
 
-console.log(toValue(countRef)) // 10
-console.log(toValue(normalValue)) // 20
-console.log(toValue(getter)) // 30
+```vue
+<template>
+  <button v-on:click="a++">A++</button>
+  <button v-on:click="b++">B++</button>
+  <p>computedA: {{ computedA }}</p>
+  <p>computedB: {{ computedB }}</p>
+  <p>methodA: {{ methodA() }}</p>
+  <p>methodB: {{ methodB() }}</p>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+const a = ref(1)
+const b = ref(1)
+// 创建两个计算属性，分别依赖 a 和 b
+const computedA = computed(() => {
+  console.log('计算属性A重新计算了')
+  return a.value + 1
+})
+const computedB = computed(() => {
+  console.log('计算属性B重新计算了')
+  return b.value + 1
+})
+function methodA() {
+  console.log('methodA执行了')
+  return a.value + 1
+}
+function methodB() {
+  console.log('methodB执行了')
+  return b.value + 1
+}
+</script>
+
+<style lang="scss" scoped></style>
 ```
+
+最佳实践，当需要对数据进行二次计算的时候，就是使用计算属性即可。方法一般是和事件相关联，作为事件的事件处理方法来使用。
 
 ---
 

@@ -1,81 +1,70 @@
 <template>
   <div>
-
+    <h1>{{ author.name }}</h1>
+    <div>
+      <span>Has Published books:</span>
+      <div>{{ author.books.length > 0 ? "Yes" : "No" }}</div>
+      <div>{{ isBookPublished }}</div>
+      <div>{{ isBookPublishedFn() }}</div>
+    </div>
+    <h1>{{ fullName }}</h1>
+    <h2>firstName: {{ firstName }}</h2>
+    <h2>lastName: {{ lastName }}</h2>
+    <h1>计算属性和方法的区别</h1>
+    <button @click="countA++">Add CountA</button>
+    <button @click="countB++">Add CountB</button>
+    <p>computedA: {{ computedA }}</p>
+    <p>computedB: {{ computedB }}</p>
+    <p>methodA: {{ methodA() }}</p>
+    <p>methodB: {{ methodB() }}</p>
   </div>
 </template>
 
 <script setup>
-import { ref, shallowRef, toRef, toRefs, reactive, shallowReactive, isRef, isReactive, readonly, isReadonly, shallowReadonly, unref, toValue, isProxy } from "vue";
-const value = 0;
-const state = reactive({
-  count: {
-    value
+import { reactive, computed, ref } from 'vue';
+const author = reactive({
+  name: "John Dow",
+  books: ["Vue 2 - Advanced Guide", "Vue 3 - Basic Guide", "Vue 4 - The Future"]
+})
+const isBookPublished = computed(() => author.books.length > 0 ? "Yes" : "No");
+
+// 利用 get 和 set 方法在 computed 中实现更改
+const firstName = ref("John");
+const lastName = ref("Dow");
+const fullName = computed({
+  get: () => `${firstName.value} ${lastName.value}`,
+  set: (value) => {
+    [firstName.value, lastName.value] = value.split(" ");
   }
 })
-// toRef, toRefs
-const countRef = toRef(state, 'count'); // 等于: const countRef = ref(state.count);
-console.log(countRef.value.value); // 0
-console.log(isReactive(state)); // true
-console.log(isRef(countRef)); // true
+setTimeout(() => {
+  author.books = [];
+  fullName.value = "Li Si";
+}, 2000);
 
-const state2 = reactive({
-  name: "John",
-  age: 18
+// 计算属性和方法
+const isBookPublishedFn = () => author.books.length > 0 ? "Yes" : "No";
+
+// 计算属性和方法的区别: 当依赖的数据发生变化时，计算属性会重新计算，而方法不会, 但是方法会在每次重新渲染时都会执行
+const countA = ref(1);
+const countB = ref(1);
+
+const computedA = computed(() => {
+  console.log("computedA");
+  return countA.value + 1;
 });
-const state2Refs = toRefs(state2);
-console.log(state2Refs); // { name: ref("John"), age: ref(18) }
-console.log(state2Refs.name.value); // John
-console.log(state2Refs.age.value); // 18
-
-// unref, toValue
-console.log(unref(value)); // 0
-console.log(unref(countRef)); // 0
-
-// readonly, isReadonly
-const readonlyState = readonly(state2);
-// readonlyState.age++; // 报错
-console.log(isReadonly(readonlyState)); // true
-console.log(readonlyState.age); // 18
-
-// isRef, isReactive
-const obj = {
-  a: 1,
-  b: 2,
-  c: {
-    d: 3,
-    e: 4
-  }
+const computedB = computed(() => {
+  console.log("computedB");
+  return countB.value + 1;
+});
+const methodA = () => {
+  console.log("methodA");
+  return countA.value + 1;
 };
-const state3 = ref(obj)
-const state4 = shallowRef(obj)
-const state5 = reactive(obj)
-const state6 = shallowReactive(obj)
-console.log(isRef(state3.value.c)); // false
-console.log(isRef(state4.value.c)); // false
-console.log(isReactive(state3.value.c)); // true
-console.log(isReactive(state4.value.c)); // false
-console.log(isReactive(state5.c)); // true
-console.log(isReactive(state6.c)); // false
-
-// isProxy: 检查一个对象是否是由 reactive、readonly、shallowReactive、shallowReadonly 创建的代理
-const reactiveObject = reactive({ name: "John" });
-const readonlyObject = readonly({ name: "John" });
-const shallowReactiveObject = shallowReactive({ name: "John" });
-const shallowReadonlyObject = shallowReadonly({ name: "John" });
-// 普通对象
-const normalObject = { name: "John" };
-
-console.log(isProxy(reactiveObject)); // true
-console.log(isProxy(readonlyObject)); // true
-console.log(isProxy(shallowReactiveObject)); // true
-console.log(isProxy(shallowReadonlyObject)); // true
-console.log(isProxy(normalObject)); // false
-
-// toValue
-const func = () => 30;
-console.log(toValue(30)); // 30
-console.log(toValue(ref(20))); // 20
-console.log(toValue(func)); // 30
+const methodB = () => {
+  console.log("methodB");
+  return countB.value + 1;
+};
 </script>
 
 <style lang="scss" scoped></style>
