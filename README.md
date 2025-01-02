@@ -1,226 +1,231 @@
-# 计算属性
+# 类与样式绑定
 
-模板表达式：
+前面有介绍过属性动态绑定数据。有两个属性比较特殊：class 和 style
+
+这两个用得很多，如果数据那一边使用字符串拼接很容易出错。因此 Vue 针对这两个属性提供了特殊的功能增强。除了字符串的值以外还可以是对象和数组。
+
+
+
+## 绑定类
+
+**对象语法**
+
+可以给 class 绑定一个对象来切换 class，该对象的键就是要挂上去的样式类，值对应的是一个布尔值，true 表示挂上去，false 表示不挂上去。
 
 ```vue
 <template>
-<span>Name: {{ author.name }}</span>
-  <p>Has published books:</p>
-  <span>{{ author.books.length > 0 ? 'Yes' : 'No' }}</span>
+  <div
+    class="demo"
+    :class="{
+      active: isActive,
+      'text-danger': hasError
+    }"
+  >
+    绑定样式类
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+const isActive = ref(true)
+const hasError = ref(false)
+setTimeout(() => {
+  hasError.value = true
+}, 3000)
+</script>
+
+<style scoped></style>
+```
+
+
+
+如果一个元素要挂的类比较多，那么推荐将对象写到数据里面，不要写到模板里面：
+
+```vue
+<template>
+  <div class="demo" :class="classObj">绑定样式类</div>
 </template>
 
 <script setup>
 import { reactive } from 'vue'
-const author = reactive({
-  name: 'John Doe',
-  books: ['Vue 2 - Advanced Guide', 'Vue 3 - Basic Guide', 'Vue 4 - The Mystery']
-})
-</script>
-
-<style lang="scss" scoped></style>
-```
-
-在上面的例子中，我们之所以要使用模板表达式，是因为要渲染的数据和模板之间，并非简单的对应关系，需要进行二次处理之后，才能够在模板上使用。
-
-虽然在上面的例子中，使用模板表达式能够解决上面的需求（对数据做二次处理的需求），但是也存在一些问题：
-
-1. 因为只能写表达式，不能够写语句，所以这意味着无法支持复杂的运算
-2. 将计算逻辑写在模板里面，模板显得非常的臃肿
-3. 相同的计算逻辑要在模板中出现多次，难以维护，计算逻辑理应是能够复用的
-
-因此，正因为有上面的这些问题，所以计算属性登场了。
-
-
-
-## 基本使用
-
-基本使用代码如下：
-
-```vue
-<template>
-  <span>Name: {{ author.name }}</span>
-  <p>Has published books:</p>
-  <span>{{ isPublishBook }}</span>
-</template>
-
-<script setup>
-import { reactive, computed } from 'vue'
-const author = reactive({
-  name: 'John Doe',
-  books: ['Vue 2 - Advanced Guide', 'Vue 3 - Basic Guide', 'Vue 4 - The Mystery']
+const classObj = reactive({
+  active: true,
+  isFinite: true,
+  'text-danger': false
 })
 
-const isPublishBook = computed(() => {
-  // 在计算属性里面，我们就对数据进行二次处理
-  return author.books.length > 0 ? 'Yes' : 'No'
-})
-
-// 计算属性也是响应式，当依赖的数据发生变化，那么计算属性也会重新计算
 setTimeout(() => {
-  author.books = []
-}, 2000)
+  classObj['text-danger'] = true
+}, 3000)
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped></style>
 ```
 
-总结一下，计算属性一般就是对响应式数据进行二次计算，返回一个计算属性的 ref，该 ref 可以在模板中使用。如果所依赖的响应式数据发生了变化，那么该计算属性会重新进行计算。
+这样做的好处在于模板会比较清爽。
 
 
 
-## 可写计算属性
-
-一般来讲，计算属性就是对某个响应式数据进行二次计算，之后在模板中读取计算属性的值，这是绝大多数的场景下的使用，因此计算属性默认也就是只读模式。
-
-但是，计算属性是支持可写的模式，需要往 computed 方法中传递一个对象，该对象中有对应的 getter 和 setter：
+另外，也可以绑定一个计算属性的样式对象：
 
 ```vue
 <template>
-  <span>name:{{ fullName }}</span>
+  <div class="demo" :class="classObj">绑定样式类</div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-const firstName = ref('Xie')
-const lastName = ref('Jie')
+const isActive = ref(true)
+const error = ref(null)
 
-const fullName = computed({
-  // 在读取计算属性值的时候会触发
-  get() {
-    return firstName.value + ' ' + lastName.value
-  },
-  // 在设置计算属性值的时候会触发
-  set(newName) {
-    ;[firstName.value, lastName.value] = newName.split(' ')
+const classObj = computed(() => {
+  return {
+    active: isActive.value && !error.value,
+    'text-danger': error.value && error.value.type === 'fatal'
   }
 })
-
-// 接下来可能因为某种原因，要设置计算属性
 setTimeout(() => {
-  // 这里就涉及到了设置计算属性
-  fullName.value = 'Zhang San'
+  error.value = {
+    type: 'fatal'
+  }
+}, 3000)
+</script>
+
+<style scoped></style>
+```
+
+
+
+**数组语法**
+
+数组语法中，数组的每一项一般都是一个 ref 值，ref 所对应的就是真实的要挂上去的类
+
+```vue
+<template>
+  <div class="demo" :class="[isActive, error]">绑定样式类</div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+const isActive = ref('active')
+const error = ref('text-danger')
+setTimeout(() => {
+  isActive.value = 'normal'
+}, 3000)
+</script>
+
+<style scoped></style>
+```
+
+数组里面，是支持三目运算表达式的：
+
+```vue
+<template>
+  <div :class="[isActive ? activeClass : '', errorClass]">绑定样式类</div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+const isActive = ref(false)
+const activeClass = ref('active')
+const errorClass = ref('text-danger')
+setTimeout(() => {
+  isActive.value = true
+}, 3000)
+</script>
+
+<style lang="scss" scoped></style>
+
+```
+
+另外，三目运算表达式可能依赖多个条件，这个时候就会显得该表达式非常冗长，此时可以在数组里面使用嵌套对象的方式：
+
+```vue
+<div :class="[{ active: isActive }, errorClass]"></div>
+```
+
+
+
+## 绑定内连样式
+
+内连样式，也就是 style 的绑定，这个更加需要功能增强。
+
+**对象方式**
+
+```vue
+<template>
+  <div
+    :style="{
+      color: activeColor,
+      fontSize: fontSize + 'px'
+    }"
+  >
+    绑定内连样式
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+const activeColor = ref('red')
+const fontSize = ref(30)
+setTimeout(() => {
+  activeColor.value = 'blue'
 }, 3000)
 </script>
 
 <style lang="scss" scoped></style>
 ```
 
+style 绑定的是一个对象，对象的键是样式名称，值对应的是 ref 形式的属性值。
 
-
-## 最佳实践
-
-1. Getter 不应该有副作用
-
-现实生活中，也有使用“副作用”这个词的场景。
-
-现实生活中的副作用指的就是“不期待的效果，但是它发生了”。
-
-程序中的副作用也是类似的意思：
-
-```js
-function effect(){
-  document.body.innerText = 'hello';
-}
-```
-
-在上面的例子中，effect 函数内部修改了 document.body 的值，这就直接或者间接影响了其他函数（可能也需要读取 document.body 的值）的执行结果，这个时候我们就称 effect 函数是有副作用。
-
-再比如，一个函数修改了全局变量，也是一个副作用操作：
-
-```js
-let val = 1;
-function effect(){
-  val = 2; // 修改全局变量，产生副作用
-}
-```
-
-常见的副作用操作还有很多：
-
-- 调用系统 I/O 的 API
-- 发送网络请求
-- 在函数体内修改外部变量的值
-- 使用 console.log 等方法进行输出
-- 调用存在副作用的函数
-
-回到 Vue 中的计算属性，一个计算属性的声明中应该描述的是根据一个值派生另外一个值，不应该改变其他的状态，也不应该在 getter 中做诸如异步请求、更改DOM一类的操作。
-
-
-
-2. 避免直接修改计算属性的值
-
-绝大多数场景下，都应该是读取计算属性的值，而非设置计算属性的值。
-
->从计算属性返回的值是**派生状态**。可以把它看作是一个“临时快照”，每当源状态发生变化时，就会创建一个新的快照。更改快照是没有意义的，因此计算属性的返回值应该被视为只读的，并且永远不应该被更改——应该更新它所依赖的源状态以触发新的计算。
-
-
-
-## 计算属性和方法
-
-除了计算属性以外，我们还可以定义方法：
+同样可以将 style 所绑定的对象在 script 里面进行声明，这样模板会更加清爽一些
 
 ```vue
 <template>
-  <span>Name: {{ author.name }}</span>
-  <p>Has published books:</p>
-  <span>{{ isPublishBook() }}</span>
+  <div :style="styleObj">绑定内连样式</div>
 </template>
 
 <script setup>
 import { reactive } from 'vue'
-const author = reactive({
-  name: 'John Doe',
-  books: ['Vue 2 - Advanced Guide', 'Vue 3 - Basic Guide', 'Vue 4 - The Mystery']
+const styleObj = reactive({
+  color: 'red',
+  fontSize: '30px'
 })
-
-function isPublishBook() {
-  return author.books.length > 0 ? 'Yes' : 'No'
-}
 </script>
 
 <style lang="scss" scoped></style>
 ```
 
-计算属性依赖于响应式数据，然后对响应式数据进行二次计算。只有在响应式数据发生变化的时候，才会重新计算，换句话说，计算属性会缓存所计算的值。
 
-而方法在重新渲染的时候，每次都是重新调用。
+
+**数组方式**
+
+数组的方式是结合着上面的对象的形式来使用的，在数组中会绑定多个样式对象：
 
 ```vue
 <template>
-  <button v-on:click="a++">A++</button>
-  <button v-on:click="b++">B++</button>
-  <p>computedA: {{ computedA }}</p>
-  <p>computedB: {{ computedB }}</p>
-  <p>methodA: {{ methodA() }}</p>
-  <p>methodB: {{ methodB() }}</p>
+  <div :style="styleArr">绑定内连样式</div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-const a = ref(1)
-const b = ref(1)
-// 创建两个计算属性，分别依赖 a 和 b
-const computedA = computed(() => {
-  console.log('计算属性A重新计算了')
-  return a.value + 1
+import { ref, reactive } from 'vue'
+const styleObj = reactive({
+  color: 'red',
+  fontSize: '30px'
 })
-const computedB = computed(() => {
-  console.log('计算属性B重新计算了')
-  return b.value + 1
+const styleObj2 = reactive({
+  textDecoration: 'underline'
 })
-function methodA() {
-  console.log('methodA执行了')
-  return a.value + 1
-}
-function methodB() {
-  console.log('methodB执行了')
-  return b.value + 1
-}
+const styleArr = ref([styleObj, styleObj2])
+setTimeout(() => {
+  styleArr.value.pop()
+}, 3000)
 </script>
 
 <style lang="scss" scoped></style>
 ```
 
-最佳实践，当需要对数据进行二次计算的时候，就是使用计算属性即可。方法一般是和事件相关联，作为事件的事件处理方法来使用。
+通过数组这种方式，可以非常方便的去操控一组样式。
 
 ---
 
