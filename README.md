@@ -1,282 +1,154 @@
-# 条件和列表渲染
+# 事件处理
 
 
 
-## 条件渲染
+## 快速入门
 
-Vue 中为条件渲染提供了一组内置的指令：
-
-- v-if
-- v-else
-- v-else-if
+在 Vue 中如果要给元素绑定事件，可以使用内置指令 v-on，使用该指定就可以绑定事件：
 
 ```vue
 <template>
-  <div v-if="type === 1">晴天</div>
-  <div v-else-if="type === 2">阴天</div>
-  <div v-else-if="type === 3">雨天</div>
-  <div v-else-if="type === 4">下雪</div>
-  <div v-else>不知道什么天气</div>
+  <div>{{ count }}</div>
+  <button v-on:click="add">+1</button>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const type = ref(1)
-setInterval(() => {
-  type.value = Math.floor(Math.random() * 5 + 1)
-}, 3000)
+const count = ref(0)
+function add() {
+  count.value++
+}
 </script>
 
 <style scoped></style>
 ```
 
+上面的事件示例非常简单，不过关于事件处理，有各种各样的细节。
 
 
-如果是要切换多个元素，那么可以将多个元素包裹在 template 的标签里面，该标签是不会渲染的。
+
+**事件处理各种细节**
+
+1. 如果事件相关的处理比较简单，那么可以将事件处理器写成内连的
 
 ```vue
 <template>
-  <template v-if="type === 1">
-    <div>晴天</div>
-    <p>要出去旅游</p>
-    <p>玩的开心</p>
-  </template>
-  <template v-else-if="type === 2">
-    <div>阴天</div>
-    <p>呆在家里吧</p>
-    <p>好好看一本书</p>
-  </template>
-  <template v-else-if="type === 3">
-    <div>雨天</div>
-    <p>阴天适合睡觉</p>
-    <p>好好睡一觉吧</p>
-  </template>
-  <template v-else-if="type === 4">
-    <div>下雪</div>
-    <p>下雪啦，我们出去堆雪人吧</p>
-    <p>下雪啦，我们出去打雪仗吧</p>
-  </template>
-  <div v-else>不知道什么天气</div>
+  <div>{{ count }}</div>
+  <button v-on:click="count++">+1</button>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const type = ref(1)
-setInterval(() => {
-  type.value = Math.floor(Math.random() * 5 + 1)
-}, 3000)
+const count = ref(0)
 </script>
 
 <style scoped></style>
 ```
 
+这种内连事件处理器用的比较少，仅在逻辑比较简单的时候可以快速完成事件的书写。
 
 
-另外，关于条件渲染，还有一个常用指令：v-show
 
-v-show 的切换靠的是 CSS 的 display 属性，当值为 false 的时候，会将 display 属性设置为 none.
+2. 绑定事件是一个很常见的需求，因此 Vue 也提供了简写形式，通过 @ 符号就可以绑定事件
+
+```vue
+<button @click="count++">+1</button>
+```
+
+在日常开发中，更多的见到的就是简写形式。
+
+
+
+3. 向事件处理器传递参数
 
 ```vue
 <template>
-  <div v-if="isShow">使用 v-if 来做条件渲染</div>
-  <div v-show="isShow">使用 v-show 来做条件渲染</div>
+  <div>{{ count }}</div>
+  <button @click="add('Hello World')">+1</button>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const isShow = ref(true)
-setTimeout(() => {
-  isShow.value = false
-}, 2000)
+const count = ref(0)
+function add(message) {
+  count.value++
+  console.log(message)
+}
 </script>
 
 <style scoped></style>
 ```
 
-**v-if 和 v-show 区别**
-
-v-if 是“真实的”按条件渲染，因为它确保了在切换时，条件区块内的事件监听器和子组件都会被销毁与重建。
-
-v-if 也是惰性的：如果在初次渲染时条件值为 false，则不会做任何事。条件区块只有当条件首次变为 true 时才被渲染。
-
-相比之下，v-show 简单许多，元素无论初始条件如何，<u>始终会被渲染</u>，只有 CSS display 属性会被切换。
-
-总的来说：
-
-- v-if 有更高的切换开销，如果在运行时绑定条件很少改变，则 v-if 会更合适
-- v-show 有更高的<u>初始渲染开销</u>，如果需要频繁切换，则使用 v-show 较好
 
 
+4. 事件对象
 
-## 列表渲染
-
-这里涉及到的就是循环，Vue 也提供了一个内置指令：v-for
-
-v-for 指令使用的语法是 item in items 的形式，items 源数据的数组，item 代表的是从 items 取出来的每一项，有点类似于 JS 中的 for..of 循环。
+- 没有传参：事件对象会作为一个额外的参数，自动传入到事件处理器，在事件处理器中，只需要在形参列表中声明一下即可
+- 如果有传参：这种情况下需要使用一个特殊的变量 $event 来向事件处理器传递事件对象
 
 ```vue
 <template>
-  <div>
-    <h2>商品列表</h2>
-    <ul>
-      <li v-for="(product, index) in products" :key="index">
-        {{ index + 1 }}{{ product.name }} - {{ product.price }}
-      </li>
-    </ul>
-  </div>
+  <div>{{ count }}</div>
+  <button @click="add">+1</button>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const products = ref([
-  { name: '键盘', price: 99.99 },
-  { name: '鼠标', price: 59.99 },
-  { name: '显示器', price: 299.99 }
-])
+const count = ref(0)
+// 事件对象会自动传入，直接在事件处理器的形参中声明即可
+function add(event) {
+  count.value++
+  console.log(event)
+  console.log(event.target)
+  console.log(event.clientX, event.clientY)
+}
 </script>
 
 <style scoped></style>
 ```
 
-一般来讲，在使用 v-for 循环的时候，我们会给元素指定一个 key 属性。key 属性主要是用于 **<u>优化虚拟DOM的渲染性能</u>** 的，相当于是给虚拟 DOM 元素一个唯一性标识。当对 key 进行绑定的时候，期望所绑定的值为一个基础类型的值（string、number），不要使用对象来作为 v-for 的 key.
-
-使用 v-for 循环渲染的时候也可以使用 template 来循环多个元素，此时 key 就挂在 template 标签上面。
-
 ```vue
 <template>
-  <div>
-    <h2>商品列表</h2>
-    <template v-for="(product, index) in products" :key="index">
-      <div>{{ index + 1 }}</div>
-      <div>{{ product.name }}</div>
-      <div>{{ product.price }}</div>
-      <hr />
-    </template>
-  </div>
+  <div>{{ count }}</div>
+  <!-- 必须显式的使用 $event 来向事件处理器传递事件对象 -->
+  <button @click="add('Hello World', $event)">+1</button>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const products = ref([
-  { name: '键盘', price: 99.99 },
-  { name: '鼠标', price: 59.99 },
-  { name: '显示器', price: 299.99 }
-])
+const count = ref(0)
+function add(message, event) {
+  count.value++
+  console.log(message)
+  console.log(event)
+  console.log(event.target)
+  console.log(event.clientX, event.clientY)
+}
 </script>
 
 <style scoped></style>
 ```
 
-
-
-**关于v-for一些细节**
-
-1. v-for 是可以遍历对象的，遍历对象的时候，第一个值是对象的值，第二值是对象的键，第三个值是索引
+如果是箭头函数，写法如下：
 
 ```vue
 <template>
-  <div v-for="(value, key, index) in stu" :key="index">
-   {{ index }} - {{ key }} - {{ value }}
-  </div>
-</template>
-
-<script setup>
-import { reactive } from 'vue'
-const stu = reactive({
-  name: 'zhangsan',
-  age: 18,
-  gender: 'male',
-  score: 100
-})
-</script>
-
-<style scoped></style>
-```
-
-2. v-for 还可以接收一个整数值 n，整数值会从 1....n 进行遍历
-
-```vue
-<template>
-  <div v-for="(value, index) in 10" :key="index">
-    {{ value }}
-  </div>
-</template>
-
-<script setup></script>
-
-<style scoped></style>
-```
-
-3. v-for 也是存在作用域的，作用域的工作方式和 JS 中的作用域工作方式类似
-
-```js
-const parentMessage = 'Parent'
-const items = [
-  /* ... */
-]
-
-items.forEach((item, index) => {
-  // 可以访问外层的 parentMessage
-  // 而 item 和 index 只在这个作用域可用
-  console.log(parentMessage, item.message, index)
-})
-```
-
-```vue
-<template>
-  <ul>
-    <li v-for="project in projects" :key="project.id">
-      <h2>{{ project.name }}</h2>
-      <ul>
-        <li v-for="task in project.tasks" :key="task.id">
-          <h3>{{ task.name }}</h3>
-          <ul>
-            <li v-for="(subtask, index) in task.subtasks" :key="index">
-              {{ project.name }}- {{ task.name }} - {{ subtask }}
-            </li>
-          </ul>
-        </li>
-      </ul>
-    </li>
-  </ul>
+  <div>{{ count }}</div>
+  <!-- 如果是箭头函数，那么事件对象需要作为参数传入 -->
+  <!-- 此时参数没有必须是 $event 的限制了 -->
+  <button @click="(event) => add('Hello World', event)">+1</button>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const projects = ref([
-  {
-    id: 1,
-    name: 'Project A',
-    tasks: [
-      {
-        id: 1,
-        name: 'Task A1',
-        subtasks: ['Subtask A1.1', 'Subtask A1.2']
-      },
-      {
-        id: 2,
-        name: 'Task A2',
-        subtasks: ['Subtask A2.1', 'Subtask A2.2']
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Project B',
-    tasks: [
-      {
-        id: 1,
-        name: 'Task B1',
-        subtasks: ['Subtask B1.1', 'Subtask B1.2']
-      },
-      {
-        id: 2,
-        name: 'Task B2',
-        subtasks: ['Subtask B2.1', 'Subtask B2.2']
-      }
-    ]
-  }
-])
+const count = ref(0)
+function add(message, event) {
+  count.value++
+  console.log(message)
+  console.log(event)
+  console.log(event.target)
+  console.log(event.clientX, event.clientY)
+}
 </script>
 
 <style scoped></style>
@@ -284,80 +156,142 @@ const projects = ref([
 
 
 
-4. 官方有这么一句话：不要同时使用 v-if 和 v-for，因为两者优先级不明显
+## 修饰符
 
-这里官方所谓的同时使用，指的是不要在一个元素上面同时使用：
+之所以会有修饰符，是因为之前在书写原生事件处理的时候，事件处理器中经常会包含诸如阻止冒泡、阻止默认事件等非事件业务的逻辑。有了修饰符之后，可以使用事件修饰符来完成这些非核心的业务处理，让事件处理器更加专注于业务逻辑。
+
+常见的事件处理器：
+
+- .stop：阻止事件冒泡
+- .prevent：阻止默认行为
+- .self：只有事件在该元素本身上触发时才触发处理函数（不是在子元素上）
+- .capture：改变事件的触发方式，使其在捕获阶段而不是冒泡阶段触发。
+- .once：事件只触发一次
+- .passive：用于提高页面滚动的性能。
+
+修饰符的使用也很简答：
 
 ```vue
-<!--
- 这会抛出一个错误，因为属性 todo 此时
- 没有在该实例上定义
--->
-<li v-for="todo in todos" v-if="!todo.isComplete">
-  {{ todo.name }}
-</li>
+<button @click.stop="handleClick">点击我</button>
 ```
 
-上面的例子，在同一个元素上面，既使用了 v-for 又使用了 v-if，这种方式是容易出问题的。
+下面是一个具体的示例：
 
 ```vue
-<template v-for="todo in todos">
-  <li v-if="!todo.isComplete">
-    {{ todo.name }}
-  </li>
+<template>
+  <button @click.once="clickHandle">click</button>
 </template>
+
+<script setup>
+function clickHandle() {
+  console.log('你触发了事件')
+}
+</script>
+
+<style scoped></style>
 ```
 
-在外新包装一层 template，这样可以满足上面的需求的同时代码也更加易读。
 
 
+另外需要说一下，事件修饰符是可以连用的，例如现在有这么一个需求，我们希望用户在点击按钮时：
 
-## 数组的侦测
+- 阻止事件冒泡（.stop）。
+- 阻止默认行为（.prevent），例如，防止表单提交。
+- 在捕获阶段触发事件处理器（.capture），确保在任何可能的冒泡前响应。
+- 事件处理器只触发一次（.once）。
 
-数组的方法整体分为两大类：
-
-- 变更方法：调用这些方法时会对原来的数组进行变更
-  - push
-  - pop
-  - shift
-  - unshift
-  - splice
-  - sort
-  - reverse
-- 非变更方法：调用这些方法不会对原来的数组进行变更，而是会返回一个新的数组
-  - filter
-  - concat
-  - slice
-  - map
-
-针对变更方法，数组只要一更新，就会触发它的响应式，页面会重新渲染
-
-```js
-setTimeout(() => {
-  projects.value.push({
-    id: 3,
-    name: '这是一个大项目',
-    tasks: [
-      {
-        id: 1,
-        name: '搭建工程',
-        subtasks: ['🧵调研框架', '熟悉框架']
-      },
-      {
-        id: 2,
-        name: '分解模块',
-        subtasks: ['先调研', '分析']
-      }
-    ]
-  })
-}, 3000)
+```vue
+<button @click.capture.stop.prevent.once>click</button>
 ```
 
-如果是非变更方法，那么需要使用方法的返回值去替换原来的值：
+在连用事件修饰符的时候，修饰符的顺序通常不会影响最终的行为，因为不同的修饰符代表对不同方面的行为的控制，相互是不冲突的。
 
-```js
-// `items` 是一个数组的 ref
-items.value = items.value.filter((item) => item.message.match(/Foo/))
+
+
+除了事件修饰符以外，Vue 还提供了一组按键修饰符，按键修饰符主要是用于检查特点的按钮：
+
+- .enter
+- .tab
+- .delete (捕获“Delete”和“Backspace”两个按键)
+- .esc
+- .space
+- .up
+- .down
+- .left
+- .right
+- .ctrl
+- .alt
+- .shift
+- .meta（不同的系统对应不同的按键）
+
+```vue
+<template>
+  <input type="text" @keyup.enter="submitText" />
+</template>
+
+<script setup>
+function submitText() {
+  console.log('你要提交输入的内容')
+}
+</script>
+
+<style scoped></style>
+```
+
+按键修饰符也是能够连用，比如上面的例子，我们修改为 alt + enter 是提交
+
+```vue
+<input type="text" @keyup.alt.enter="submitText" />
+```
+
+> Mac 系统中 alt 对应的是 option 按键
+
+
+
+有一个特殊的修饰符 .exact ，exact 该单词的含义是“精确、精准” ，该修饰符的作用在于控制触发事件的时候，必须是指定的按键组合，不能够有其他按键。
+
+```vue
+<button @click.ctrl="onClick">A</button>
+```
+
+在上面的例子中，指定按下 ctrl 键触发事件，但是假设我现在同时按下 alt 和 ctrl 也会触发事件
+
+```vue
+<button @click.ctrl.exact="onClick">A</button>
+```
+
+添加了 .exact 修饰符之后，表示只有在按下 ctrl 并且没有按下其他按键的时候才会触发事件
+
+
+
+最后还有三个鼠标按键修饰符，用于指定特定的鼠标按键：
+
+- .left
+- .right
+- .middle
+
+```vue
+<template>
+  <button class="context-menu-button" @contextmenu.prevent.right="handleRightClick">
+    右键点击
+  </button>
+</template>
+
+<script setup>
+function handleRightClick() {
+  console.log('你点击了鼠标右键')
+}
+</script>
+
+<style scoped>
+.context-menu-button {
+  padding: 10px 20px;
+  cursor: context-menu; /* 显示适当的鼠标指针 */
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+</style>
 ```
 
 
