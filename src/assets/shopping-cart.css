@@ -1,0 +1,77 @@
+#app {
+  width: 600px;
+  margin: 20px auto;
+}
+
+table {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+th,
+td {
+  padding: 12px 6px;
+}
+
+td {
+  text-align: center;
+}
+
+table button {
+  padding: 5px 15px;
+  font-size: 16px;
+  border-radius: 5px;
+  margin: 0 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.priceNum {
+  width: 30px;
+  height: 36px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding-left: 25px;
+}
+
+.delete {
+  background-color: red;
+  color: white;
+}
+
+.footer {
+  width: 600px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.checkboxBtn {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+}
+
+.footer-left,
+.footer-right {
+  display: flex;
+  align-items: center;
+}
+
+.footer-left>div {
+  margin-right: 10px;
+}
+
+.footer-right div {
+  margin-right: 10px;
+}
+
+.footer-right button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #18d8d8;
+  color: white;
+}
