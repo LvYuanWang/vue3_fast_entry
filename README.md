@@ -1,79 +1,68 @@
-# 事件处理
+# 表单处理
 
 
 
-## 快速入门
+## 表单元素的数据绑定
 
-在 Vue 中如果要给元素绑定事件，可以使用内置指令 v-on，使用该指定就可以绑定事件：
+下面是一个文本框和数据进行绑定的例子：
 
 ```vue
 <template>
-  <div>{{ count }}</div>
-  <button v-on:click="add">+1</button>
+  <input type="text" :value="textContent" @input="(e) => (textContent = e.target.value)" />
+  <p>你当前输入的内容为：{{ textContent }}</p>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const count = ref(0)
-function add() {
-  count.value++
-}
+const textContent = ref('')
 </script>
 
 <style scoped></style>
 ```
 
-上面的事件示例非常简单，不过关于事件处理，有各种各样的细节。
+上面的例子我们让文本库和 ref 数据进行了绑定，用户在输入内容的时候，会去更新 textContent 这个 ref 数据，而 ref 数据的变化又会影响文本框本身的 value 值。这其实就是一个双向绑定的例子。
 
-
-
-**事件处理各种细节**
-
-1. 如果事件相关的处理比较简单，那么可以将事件处理器写成内连的
+上面的例子虽然实现了双向绑定，但是写起来比较麻烦，因此 Vue 提供了一个内置的指令 v-model
 
 ```vue
 <template>
-  <div>{{ count }}</div>
-  <button v-on:click="count++">+1</button>
+  <input type="text" v-model="textContent" />
+  <p>你当前输入的内容为：{{ textContent }}</p>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const count = ref(0)
+const textContent = ref('')
 </script>
 
 <style scoped></style>
 ```
 
-这种内连事件处理器用的比较少，仅在逻辑比较简单的时候可以快速完成事件的书写。
+上面的例子使用了 v-model 来进行双向绑定，textContent 的变化会影响文本框的值，文本框的值也会影响 textContent.
+
+使用 v-model 的好处在于：
+
+1. 简化了书写
+2. 根据所使用的元素自动的选择对应的属性以及事件组合
+   - input 或者 textarea，元素会绑定 input 事件，绑定的值是 value
+   - 如果是单选框或者复选框，背后绑定的事件是 change 事件，绑定的值 checked
+   - select 下拉列表绑定的也是 change 事件，绑定的值是 value
 
 
 
-2. 绑定事件是一个很常见的需求，因此 Vue 也提供了简写形式，通过 @ 符号就可以绑定事件
+**文本域**
 
-```vue
-<button @click="count++">+1</button>
-```
-
-在日常开发中，更多的见到的就是简写形式。
-
-
-
-3. 向事件处理器传递参数
+文本域就是多行文本，对应的标签为 textarea
 
 ```vue
 <template>
-  <div>{{ count }}</div>
-  <button @click="add('Hello World')">+1</button>
+  <textarea cols="30" rows="10" v-model="textContent"></textarea>
+  <p>你当前输入的内容为：{{ textContent }}</p>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const count = ref(0)
-function add(message) {
-  count.value++
-  console.log(message)
-}
+const textContent = ref('')
 </script>
 
 <style scoped></style>
@@ -81,217 +70,189 @@ function add(message) {
 
 
 
-4. 事件对象
+**复选框**
 
-- 没有传参：事件对象会作为一个额外的参数，自动传入到事件处理器，在事件处理器中，只需要在形参列表中声明一下即可
-- 如果有传参：这种情况下需要使用一个特殊的变量 $event 来向事件处理器传递事件对象
+单一的复选框，可以使用 v-model 去绑定一个 ref 类型的布尔值，布尔值为 true 表示选择中，false 表示未选中
 
 ```vue
 <template>
-  <div>{{ count }}</div>
-  <button @click="add">+1</button>
+  <input type="checkbox" v-model="checked" />
+  <button @click="checked = !checked">切换选中</button>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const count = ref(0)
-// 事件对象会自动传入，直接在事件处理器的形参中声明即可
-function add(event) {
-  count.value++
-  console.log(event)
-  console.log(event.target)
-  console.log(event.clientX, event.clientY)
-}
+const checked = ref(true)
 </script>
 
 <style scoped></style>
 ```
 
+在上面的例子中，布尔值 true 是选中，false 是未选中，但是这个真假值是可以自定义：
+
 ```vue
 <template>
-  <div>{{ count }}</div>
-  <!-- 必须显式的使用 $event 来向事件处理器传递事件对象 -->
-  <button @click="add('Hello World', $event)">+1</button>
+  <input type="checkbox" v-model="checked" :true-value="customTrue" :false-value="customFalse" />
+  <button @click="toggle">切换选中</button>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const count = ref(0)
-function add(message, event) {
-  count.value++
-  console.log(message)
-  console.log(event)
-  console.log(event.target)
-  console.log(event.clientX, event.clientY)
+const checked = ref('yes')
+// 现在相当于是自定义什么值是选中，什么值是未选中
+// 之前是默认true是选中，false是未选中
+// 现在是yes是选中，no是未选中
+const customTrue = ref('yes')
+const customFalse = ref('no')
+function toggle() {
+  checked.value === 'yes' ? (checked.value = 'no') : (checked.value = 'yes')
 }
 </script>
 
 <style scoped></style>
 ```
 
-如果是箭头函数，写法如下：
+有些时候我们有多个复选框，这个时候，可以将多个复选框绑定到同一个数组或者集合的值：
 
 ```vue
 <template>
-  <div>{{ count }}</div>
-  <!-- 如果是箭头函数，那么事件对象需要作为参数传入 -->
-  <!-- 此时参数没有必须是 $event 的限制了 -->
-  <button @click="(event) => add('Hello World', event)">+1</button>
+  <div v-for="(item, index) in arr" :key="index">
+    <label for="item.id">{{ item.title }}</label>
+    <input type="checkbox" v-model="hobby" :id="item.id" :value="item.value" />
+  </div>
+  <p>{{ message }}</p>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+const hobby = ref([])
+const arr = ref([
+  { id: 'swim', title: '游泳', value: '游个泳' },
+  { id: 'run', title: '跑步', value: '跑个步' },
+  { id: 'game', title: '游戏', value: '玩个游戏' },
+  { id: 'music', title: '音乐', value: '听个音乐' },
+  { id: 'movie', title: '电影', value: '看个电影' }
+])
+const message = computed(() => {
+  // 根据 hobby 的值进行二次计算
+  if (hobby.value.length === 0) return '请选择爱好'
+  else return `您选择了${hobby.value.join('、')}`
+})
+</script>
+
+<style scoped></style>
+```
+
+在上面的例子中，checkbox 所绑定的数据不再是一个布尔值，而是一个数组（集合），那么当该复选框被选中的时候，该复选框所对应的值就会被加入到数组里面。
+
+
+
+**单选框**
+
+```vue
+<template>
+  <label for="male">男</label>
+  <input type="radio" id="male" v-model="gender" value="男" />
+  <label for="female">女</label>
+  <input type="radio" id="female" v-model="gender" value="女" />
+  <label for="secret">保密</label>
+  <input type="radio" id="secret" v-model="gender" value="保密" />
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const count = ref(0)
-function add(message, event) {
-  count.value++
-  console.log(message)
-  console.log(event)
-  console.log(event.target)
-  console.log(event.clientX, event.clientY)
-}
+const gender = ref('保密')
+setTimeout(() => {
+  gender.value = '男'
+}, 3000)
 </script>
 
 <style scoped></style>
 ```
 
+上面的例子演示了单选框如何进行双向绑定，哪一个单选框被选中取决于 gender 的值。
 
 
-## 修饰符
 
-之所以会有修饰符，是因为之前在书写原生事件处理的时候，事件处理器中经常会包含诸如阻止冒泡、阻止默认事件等非事件业务的逻辑。有了修饰符之后，可以使用事件修饰符来完成这些非核心的业务处理，让事件处理器更加专注于业务逻辑。
+**下拉列表**
 
-常见的事件处理器：
-
-- .stop：阻止事件冒泡
-- .prevent：阻止默认行为
-- .self：只有事件在该元素本身上触发时才触发处理函数（不是在子元素上）
-- .capture：改变事件的触发方式，使其在捕获阶段而不是冒泡阶段触发。
-- .once：事件只触发一次
-- .passive：用于提高页面滚动的性能。
-
-修饰符的使用也很简答：
-
-```vue
-<button @click.stop="handleClick">点击我</button>
-```
-
-下面是一个具体的示例：
+下拉列表在进行双向绑定的时候，v-model 是写在 select 标签上面：
 
 ```vue
 <template>
-  <button @click.once="clickHandle">click</button>
+  <!-- 下拉列表列表是单选的话，v-model 绑定的值是一个字符串，这个字符串是 option 的 value 值 -->
+  <select v-model="hometown1">
+    <option value="" disabled>请选择</option>
+    <option v-for="(item, index) in hometownList" :key="index" :value="item.key">
+      {{ item.value }}
+    </option>
+  </select>
+  <p>您选择的家乡为：{{ hometown1 }}</p>
+  <!-- 如果下拉列表是多选的话，v-model 绑定的值是一个数组，这个数组是 option 的 value 值组成的数组 -->
+  <select v-model="hometown2" multiple>
+    <option value="" disabled>请选择</option>
+    <option v-for="(item, index) in hometownList" :key="index" :value="item.key">
+      {{ item.value }}
+    </option>
+  </select>
+  <p>您选择的家乡为：{{ hometown2 }}</p>
 </template>
 
 <script setup>
-function clickHandle() {
-  console.log('你触发了事件')
-}
+import { ref } from 'vue'
+const hometown1 = ref('')
+const hometown2 = ref([])
+const hometownList = ref([
+  { key: '成都', value: '成都' },
+  { key: '帝都', value: '北京' },
+  { key: '魔都', value: '上海' },
+  { key: '妖都', value: '广州' },
+  { key: '陪都', value: '重庆' }
+])
 </script>
 
 <style scoped></style>
 ```
 
-
-
-另外需要说一下，事件修饰符是可以连用的，例如现在有这么一个需求，我们希望用户在点击按钮时：
-
-- 阻止事件冒泡（.stop）。
-- 阻止默认行为（.prevent），例如，防止表单提交。
-- 在捕获阶段触发事件处理器（.capture），确保在任何可能的冒泡前响应。
-- 事件处理器只触发一次（.once）。
-
-```vue
-<button @click.capture.stop.prevent.once>click</button>
-```
-
-在连用事件修饰符的时候，修饰符的顺序通常不会影响最终的行为，因为不同的修饰符代表对不同方面的行为的控制，相互是不冲突的。
+注意下拉列表根据是单选还是多选，v-model 所绑定的值的类型不一样，单选绑定字符串，多选绑定数组。
 
 
 
-除了事件修饰符以外，Vue 还提供了一组按键修饰符，按键修饰符主要是用于检查特点的按钮：
+## 表单相关修饰符
 
-- .enter
-- .tab
-- .delete (捕获“Delete”和“Backspace”两个按键)
-- .esc
-- .space
-- .up
-- .down
-- .left
-- .right
-- .ctrl
-- .alt
-- .shift
-- .meta（不同的系统对应不同的按键）
+- lazy：默认情况下，v-model 会在每次 input 事件触发时就更新数据，lazy 修饰符可以改为 change 事件触发后才更新数据
+- number：将用户输入的内容从字符串转为 number 类型
+- trim：去除输入的内容的两端的空格
 
 ```vue
 <template>
-  <input type="text" @keyup.enter="submitText" />
+  <!-- lazy修饰符演示 -->
+  <input type="text" v-model.lazy="mess1" />
+  <p>你输入的是：{{ mess1 }}</p>
+  <p>类型为{{ typeof mess1 }}</p>
+  <p>长度为{{ mess1.length }}</p>
+
+  <!-- number修饰符演示 -->
+  <input type="text" v-model.number="mess2" />
+  <p>你输入的是：{{ mess2 }}</p>
+  <p>类型为{{ typeof mess2 }}</p>
+  <p>长度为{{ mess2.length }}</p>
+
+  <!-- trim修饰符演示 -->
+  <input type="text" v-model.trim="mess3" />
+  <p>你输入的是：{{ mess3 }}</p>
+  <p>类型为{{ typeof mess3 }}</p>
+  <p>长度为{{ mess3.length }}</p>
 </template>
 
 <script setup>
-function submitText() {
-  console.log('你要提交输入的内容')
-}
+import { ref } from 'vue'
+const mess1 = ref('')
+const mess2 = ref('')
+const mess3 = ref('')
 </script>
 
 <style scoped></style>
-```
-
-按键修饰符也是能够连用，比如上面的例子，我们修改为 alt + enter 是提交
-
-```vue
-<input type="text" @keyup.alt.enter="submitText" />
-```
-
-> Mac 系统中 alt 对应的是 option 按键
-
-
-
-有一个特殊的修饰符 .exact ，exact 该单词的含义是“精确、精准” ，该修饰符的作用在于控制触发事件的时候，必须是指定的按键组合，不能够有其他按键。
-
-```vue
-<button @click.ctrl="onClick">A</button>
-```
-
-在上面的例子中，指定按下 ctrl 键触发事件，但是假设我现在同时按下 alt 和 ctrl 也会触发事件
-
-```vue
-<button @click.ctrl.exact="onClick">A</button>
-```
-
-添加了 .exact 修饰符之后，表示只有在按下 ctrl 并且没有按下其他按键的时候才会触发事件
-
-
-
-最后还有三个鼠标按键修饰符，用于指定特定的鼠标按键：
-
-- .left
-- .right
-- .middle
-
-```vue
-<template>
-  <button class="context-menu-button" @contextmenu.prevent.right="handleRightClick">
-    右键点击
-  </button>
-</template>
-
-<script setup>
-function handleRightClick() {
-  console.log('你点击了鼠标右键')
-}
-</script>
-
-<style scoped>
-.context-menu-button {
-  padding: 10px 20px;
-  cursor: context-menu; /* 显示适当的鼠标指针 */
-  background-color: #f5f5f5;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-</style>
 ```
 
 
