@@ -1,261 +1,104 @@
-# 表单处理
+# 生命周期
 
 
 
-## 表单元素的数据绑定
+## 理解什么是生命周期
 
-下面是一个文本框和数据进行绑定的例子：
+生命周期是组件（目前我们接触到的就是 App.vue 这个根组件）从<u>创建</u>到最终<u>销毁</u>所经历的一系列过程。在这个过程中设置了一些特殊的时间点，开发者可以在这些特殊的时间点，设置一些函数，这样的函数称之为钩子🪝函数，必须把开发者设置的钩子函数执行完毕后，才能继续走后面的流程。
 
-```vue
-<template>
-  <input type="text" :value="textContent" @input="(e) => (textContent = e.target.value)" />
-  <p>你当前输入的内容为：{{ textContent }}</p>
-</template>
+这就让开发者有机会在特定的时段执行自己的业务逻辑代码。
 
-<script setup>
-import { ref } from 'vue'
-const textContent = ref('')
-</script>
+完整的生命周期图如下：
 
-<style scoped></style>
-```
+<img src="https://xiejie-typora.oss-cn-chengdu.aliyuncs.com/2024-04-12-031421.png" alt="lifecycle" style="zoom:60%;" />
 
-上面的例子我们让文本库和 ref 数据进行了绑定，用户在输入内容的时候，会去更新 textContent 这个 ref 数据，而 ref 数据的变化又会影响文本框本身的 value 值。这其实就是一个双向绑定的例子。
+## 快速入门
 
-上面的例子虽然实现了双向绑定，但是写起来比较麻烦，因此 Vue 提供了一个内置的指令 v-model
+目前我们没有必要将上面所有的生命周期钩子函数都完全理解，先学习一个即可。
+
+目前我们需要掌握的就是 mounted，mounted 对应的钩子函数为 onMounted，该钩子函数会在完成了初始化渲染并且创建和插入了 DOM 节点之后被触发，这意味着在当前的这个时间节点，你是可以访问真实的 DOM 元素的。
 
 ```vue
 <template>
-  <input type="text" v-model="textContent" />
-  <p>你当前输入的内容为：{{ textContent }}</p>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-const textContent = ref('')
-</script>
-
-<style scoped></style>
-```
-
-上面的例子使用了 v-model 来进行双向绑定，textContent 的变化会影响文本框的值，文本框的值也会影响 textContent.
-
-使用 v-model 的好处在于：
-
-1. 简化了书写
-2. 根据所使用的元素自动的选择对应的属性以及事件组合
-   - input 或者 textarea，元素会绑定 input 事件，绑定的值是 value
-   - 如果是单选框或者复选框，背后绑定的事件是 change 事件，绑定的值 checked
-   - select 下拉列表绑定的也是 change 事件，绑定的值是 value
-
-
-
-**文本域**
-
-文本域就是多行文本，对应的标签为 textarea
-
-```vue
-<template>
-  <textarea cols="30" rows="10" v-model="textContent"></textarea>
-  <p>你当前输入的内容为：{{ textContent }}</p>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-const textContent = ref('')
-</script>
-
-<style scoped></style>
-```
-
-
-
-**复选框**
-
-单一的复选框，可以使用 v-model 去绑定一个 ref 类型的布尔值，布尔值为 true 表示选择中，false 表示未选中
-
-```vue
-<template>
-  <input type="checkbox" v-model="checked" />
-  <button @click="checked = !checked">切换选中</button>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-const checked = ref(true)
-</script>
-
-<style scoped></style>
-```
-
-在上面的例子中，布尔值 true 是选中，false 是未选中，但是这个真假值是可以自定义：
-
-```vue
-<template>
-  <input type="checkbox" v-model="checked" :true-value="customTrue" :false-value="customFalse" />
-  <button @click="toggle">切换选中</button>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-const checked = ref('yes')
-// 现在相当于是自定义什么值是选中，什么值是未选中
-// 之前是默认true是选中，false是未选中
-// 现在是yes是选中，no是未选中
-const customTrue = ref('yes')
-const customFalse = ref('no')
-function toggle() {
-  checked.value === 'yes' ? (checked.value = 'no') : (checked.value = 'yes')
-}
-</script>
-
-<style scoped></style>
-```
-
-有些时候我们有多个复选框，这个时候，可以将多个复选框绑定到同一个数组或者集合的值：
-
-```vue
-<template>
-  <div v-for="(item, index) in arr" :key="index">
-    <label for="item.id">{{ item.title }}</label>
-    <input type="checkbox" v-model="hobby" :id="item.id" :value="item.value" />
+  <div>
+    <h1>用户列表</h1>
+    <ul v-if="!loading">
+      <li v-for="(user, index) in users" :key="index">{{ user.name }} - {{ user.email }}</li>
+    </ul>
+    <div v-if="loading">加载中...</div>
+    <div v-if="error">出错啦！</div>
   </div>
-  <p>{{ message }}</p>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-const hobby = ref([])
-const arr = ref([
-  { id: 'swim', title: '游泳', value: '游个泳' },
-  { id: 'run', title: '跑步', value: '跑个步' },
-  { id: 'game', title: '游戏', value: '玩个游戏' },
-  { id: 'music', title: '音乐', value: '听个音乐' },
-  { id: 'movie', title: '电影', value: '看个电影' }
-])
-const message = computed(() => {
-  // 根据 hobby 的值进行二次计算
-  if (hobby.value.length === 0) return '请选择爱好'
-  else return `您选择了${hobby.value.join('、')}`
+import { ref, onMounted } from 'vue'
+
+const users = ref([])
+const loading = ref(false)
+const error = ref(null)
+
+onMounted(async () => {
+  // 一般来讲，我们会在此生命周期钩子方法中请求数据
+  loading.value = true
+  try {
+    const res = await fetch('https://jsonplaceholder.typicode.com/users')
+    if (res.ok) {
+      users.value = await res.json()
+    } else {
+      throw new Error('请求失败')
+    }
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    // 无论是出错也好，还是正常请求到了数据，都需要将 loading 状态改为 false
+    loading.value = false
+  }
 })
 </script>
 
 <style scoped></style>
 ```
 
-在上面的例子中，checkbox 所绑定的数据不再是一个布尔值，而是一个数组（集合），那么当该复选框被选中的时候，该复选框所对应的值就会被加入到数组里面。
+完整的生命周期钩子方法：https://cn.vuejs.org/api/composition-api-lifecycle.html
 
 
 
-**单选框**
+## Vue2中的生命周期
+
+注意，Vue3中是支持Vue2的生命周期方法的，毕竟之前 Vue2 的选项式API的写法是作为一种风格继续存在于Vue3中的。
+
+Vue2以前的那些生命周期方法和Vue3是共存的，只不过名字有一些不一样，例如上面的 mounted 阶段对应的钩子方法：
+
+- Vue3：onMounted
+- Vue2：mounted
+
+另外就是执行的时机也会有一些不同，假设 Vue2 和 Vue3 同一个生命周期周设置了两种形式的钩子方法，Vue3 的钩子方法的执行时机会早于 Vue2 的钩子方法。
 
 ```vue
 <template>
-  <label for="male">男</label>
-  <input type="radio" id="male" v-model="gender" value="男" />
-  <label for="female">女</label>
-  <input type="radio" id="female" v-model="gender" value="女" />
-  <label for="secret">保密</label>
-  <input type="radio" id="secret" v-model="gender" value="保密" />
+  <div>Vue2 和 Vue3 钩子函数执行时机对比</div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-const gender = ref('保密')
-setTimeout(() => {
-  gender.value = '男'
-}, 3000)
+<script>
+import { onMounted } from 'vue'
+// 这里使用选项时API风格
+export default {
+  mounted() {
+    console.log('执行Vue2的钩子函数')
+  },
+  setup() {
+    // 使用setup函数
+    onMounted(() => {
+      console.log('执行Vue3的onMounted函数')
+    })
+  }
+}
 </script>
 
 <style scoped></style>
 ```
 
-上面的例子演示了单选框如何进行双向绑定，哪一个单选框被选中取决于 gender 的值。
-
-
-
-**下拉列表**
-
-下拉列表在进行双向绑定的时候，v-model 是写在 select 标签上面：
-
-```vue
-<template>
-  <!-- 下拉列表列表是单选的话，v-model 绑定的值是一个字符串，这个字符串是 option 的 value 值 -->
-  <select v-model="hometown1">
-    <option value="" disabled>请选择</option>
-    <option v-for="(item, index) in hometownList" :key="index" :value="item.key">
-      {{ item.value }}
-    </option>
-  </select>
-  <p>您选择的家乡为：{{ hometown1 }}</p>
-  <!-- 如果下拉列表是多选的话，v-model 绑定的值是一个数组，这个数组是 option 的 value 值组成的数组 -->
-  <select v-model="hometown2" multiple>
-    <option value="" disabled>请选择</option>
-    <option v-for="(item, index) in hometownList" :key="index" :value="item.key">
-      {{ item.value }}
-    </option>
-  </select>
-  <p>您选择的家乡为：{{ hometown2 }}</p>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-const hometown1 = ref('')
-const hometown2 = ref([])
-const hometownList = ref([
-  { key: '成都', value: '成都' },
-  { key: '帝都', value: '北京' },
-  { key: '魔都', value: '上海' },
-  { key: '妖都', value: '广州' },
-  { key: '陪都', value: '重庆' }
-])
-</script>
-
-<style scoped></style>
-```
-
-注意下拉列表根据是单选还是多选，v-model 所绑定的值的类型不一样，单选绑定字符串，多选绑定数组。
-
-
-
-## 表单相关修饰符
-
-- lazy：默认情况下，v-model 会在每次 input 事件触发时就更新数据，lazy 修饰符可以改为 change 事件触发后才更新数据
-- number：将用户输入的内容从字符串转为 number 类型
-- trim：去除输入的内容的两端的空格
-
-```vue
-<template>
-  <!-- lazy修饰符演示 -->
-  <input type="text" v-model.lazy="mess1" />
-  <p>你输入的是：{{ mess1 }}</p>
-  <p>类型为{{ typeof mess1 }}</p>
-  <p>长度为{{ mess1.length }}</p>
-
-  <!-- number修饰符演示 -->
-  <input type="text" v-model.number="mess2" />
-  <p>你输入的是：{{ mess2 }}</p>
-  <p>类型为{{ typeof mess2 }}</p>
-  <p>长度为{{ mess2.length }}</p>
-
-  <!-- trim修饰符演示 -->
-  <input type="text" v-model.trim="mess3" />
-  <p>你输入的是：{{ mess3 }}</p>
-  <p>类型为{{ typeof mess3 }}</p>
-  <p>长度为{{ mess3.length }}</p>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-const mess1 = ref('')
-const mess2 = ref('')
-const mess3 = ref('')
-</script>
-
-<style scoped></style>
-```
-
-
+上面的这个点稍微有一个印象即可。真实开发中是**不可能**两个版本的生命周期钩子方法混着使用的。
 
 ---
 
