@@ -15,4 +15,14 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      // '/reply': {
+      //   target: 'https://api.mlyai.com',  // 代理地址
+      //   changeOrigin: true,
+      //   rewrite: (path) => path.replace(/^\/reply/, '') // 将 /api 重写为空
+      // }
+      '/reply': 'https://api.mlyai.com'
+    }
+  }
 })
