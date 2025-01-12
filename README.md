@@ -1,33 +1,62 @@
-# 自定义事件
+# 组件v-model
 
-自定义事件的核心思想，子组件传递数据给父组件。
+父传子通过 Props，子传父通过自定义事件。
 
-另外，父组件传递给子组件的数据，子组件不能去改，此时子组件也可以通过自定义事件的形式，去通知父组件，让父组件即时的更新数据。
+v-model 是 Vue 中的一个内置指令，除了可以做表单元素的双向绑定以外，还可以用在组件上面，从而成为父组件和子组件数据传输的桥梁。
 
 ## 快速上手
 
-这里以评分组件为例：
+App.vue
 
 ```vue
 <template>
-  <div class="rating-container">
-    <span v-for="star in 5" :key="star" class="star" @click="setStar(star)">
-      {{ rating >= star ? '★' : '☆' }}
-    </span>
+  <div class="app-container">
+    <h1>请对本次服务评分：</h1>
+    <!-- <Rating @update-rating="handleRating" :rating /> -->
+    <Rating v-model="rating" />
+    <p v-if="rating > 0">你当前的评价为 {{ rating }} 颗星</p>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-const rating = ref(0) // 表示几颗星
+import Rating from './components/Rating.vue'
+// 这是父组件维护的数据
+const rating = ref(0)
+</script>
 
-const emits = defineEmits(['update-rating'])
+<style scoped>
+.app-container {
+  max-width: 600px;
+  margin: auto;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+p {
+  font-size: 18px;
+  color: #333;
+}
+</style>
+
+```
+
+Rating.vue
+
+```vue
+<template>
+  <div class="rating-container">
+    <span v-for="star in 5" :key="star" class="star" @click="setStar(star)">
+      {{ model >= star ? '★' : '☆' }}
+    </span>
+  </div>
+</template>
+
+<script setup>
+const model = defineModel()
 
 function setStar(newStar) {
-  rating.value = newStar
-  // 我们需要将最新的星星状态的值传递给父组件
-  // 触发父组件的 update-rating 事件
-  emits('update-rating', rating.value)
+  model.value = newStar
 }
 </script>
 
@@ -47,105 +76,181 @@ function setStar(newStar) {
   color: orange;
 }
 </style>
+
 ```
 
-在上面的评分组件中，我们需要将子组件 rating 的状态值传递给父组件，通过触发父组件所绑定的 update-rating 事件来进行传递。
+在上面的例子中， 仍然是一个宏，并且这个宏是从 3.4 才开始支持的。
+
+defineModel 没有破坏单向数据流的规则，因为它的底层仍然是使用的 Props 和 emits，编译器在进行编译的时候，会将 defineModel 这个宏展开为：
+
+- 一个名为 modelValue 的 prop
+- 一个名为 update:modelValue 的事件
+
+如果你是 3.4 版本之前，那么得按照这种方式来使用：
 
 ```vue
+<script setup>
+// 接收父组件传递下来的 Props
+const props = defineProps(['modelValue'])
+// 触发父组件的事件
+const emit = defineEmits(['update:modelValue'])
+</script>
+
 <template>
-  <div class="app-container">
-    <h1>请对本次服务评分：</h1>
-    <Rating @update-rating="handleRating" />
-    <p v-if="rating > 0">你当前的评价为 {{ rating }} 颗星</p>
-  </div>
+  <input
+    :value="props.modelValue"
+    @input="emit('update:modelValue', $event.target.value)"
+  />
 </template>
-
-<script setup>
-import { ref } from 'vue'
-import Rating from './components/Rating.vue'
-const rating = ref(0)
-
-function handleRating(newRating) {
-  // 更新父组件的数据就可以了
-  rating.value = newRating
-}
-</script>
-
-<style scoped>
-.app-container {
-  max-width: 600px;
-  margin: auto;
-  text-align: center;
-  font-family: Arial, sans-serif;
-}
-
-p {
-  font-size: 18px;
-  color: #333;
-}
-</style>
 ```
 
-父组件在使用子组件的时候，就为子组件绑定了自定义事件，本例中是 update-rating 事件，当子组件触发该事件时，就会执行该事件所对应的事件处理函数 handleRating. 事件处理函数的形参就能够接收到子组件传递过来的数据。
-
-
-
-## 事件相关细节
-
-在组件的模板中，可以直接使用 $emit 去触发自定义事件。例如上面的评分的组件例子，可以这么写：
+由于 v-model 返回的是一个 ref 值，这个值可以再次和子组件的表单元素进行双向绑定：
 
 ```vue
-<span v-for="star in 5" :key="star" class="star" @click="$emit('update-rating', star)">
-  {{ rating >= star ? '★' : '☆' }}
-</span>
+<input type="text" v-model="model" />
 ```
 
-和前面所介绍的 Props 类似，自定义事件也是支持校验的。这里的校验主要是对子组件要传递给父组件的值进行校验。
 
-要添加校验，需要书写为对象的形式，对象的键是事件名，值是校验函数，校验函数所接收的参数就是 emit 触发事件时要传递给父组件的参数，需要返回一个布尔值来说明传递的值是否通过了校验。
 
-```vue
-<script setup>
-const emit = defineEmits({
-  // 没有校验
-  click: null,
+## 相关细节
 
-  // 校验 submit 事件
-  submit: ({ email, password }) => {
-    if (email && password) {
-      return true
-    } else {
-      console.warn('Invalid submit event payload!')
-      return false
-    }
-  }
-})
-
-function submitForm(email, password) {
-  emit('submit', { email, password })
-}
-</script>
-```
-
-例如还是拿刚才的评分组件来举例：
+1. defineModel支持简单的验证
 
 ```js
-defineProps(['rating'])
-const emits = defineEmits({
-  'update-rating': (value) => {
-    if (value < 1 || value > 5) {
-      console.warn('传递的值有问题！！！')
-      return false
+// 使 v-model 必填
+const model = defineModel({ required: true })
+
+// 提供一个默认值
+const model = defineModel({ default: 0 })
+
+// 指定类型
+const model = defineModel({ type: String })
+```
+
+
+
+2. 父组件在使用子组件的时候，v-model 可以传递一个参数
+
+父组件
+
+```vue
+<!-- 传递给子组件的状态是 bookTitle，而这里的 title 相当于是给当前的 v-model 命名 -->
+<MyComponent v-model:title="bookTitle" />
+```
+
+回头在子组件中：
+
+```vue
+<!-- MyComponent.vue -->
+<script setup>
+// 接收名为 title 的 v-model 绑定值
+const title = defineModel('title')
+</script>
+
+<template>
+  <input type="text" v-model="title" />
+</template>
+```
+
+当绑定多个 v-model 的时候，那么就需要命名了：
+
+```vue
+<!-- 父组件传递多个 v-model绑定值，这个时候就需要命名了 -->
+<UserName
+  v-model:first-name="first"
+  v-model:last-name="last"
+/>
+```
+
+```vue
+<script setup>
+// 子组件通过命名来指定要获取哪一个 v-model 绑定值
+const firstName = defineModel('firstName')
+const lastName = defineModel('lastName')
+</script>
+
+<template>
+  <input type="text" v-model="firstName" />
+  <input type="text" v-model="lastName" />
+</template>
+```
+
+当使用了名字之后，验证就书写成第二个参数即可
+
+```js
+const title = defineModel('title', { required: true })
+const count = defineModel("count", { type: Number, default: 0 })
+```
+
+
+
+3. 使用 v-model 和子组件进行通信的时候，也可以使用修饰符
+
+父组件
+
+```vue
+<MyComponent v-model.capitalize="myText" />
+```
+
+回头子组件通过解构的方式能够拿到修饰符
+
+```vue
+<script setup>
+const [model, modifiers] = defineModel()
+
+console.log(modifiers) // { capitalize: true }
+</script>
+
+<template>
+  <input type="text" v-model="model" />
+</template>
+```
+
+虽然拿到了修饰符，但是该修饰符没有任何功能，需要子组件这边自己来实现，实现了对应的功能之后，实际上对应的就是对子组件修改父组件数据时的一种限制。
+
+```vue
+<script setup>
+const [model, modifiers] = defineModel({
+  set(value) {
+    // 如果父组件书写了 capitalize 修饰符
+    // 那么子组件在修改状态的时候，会走 setter
+    // 在 setter 中就可以对子组件所设置的值进行一个限制
+    if (modifiers.capitalize) {
+      return value.charAt(0).toUpperCase() + value.slice(1)
     }
-    return true
+    return value
   }
 })
+</script>
 
-function setStar(newStar) {
-  // 我们需要将最新的星星状态的值传递给父组件
-  // 触发父组件的 update-rating 事件
-  emits('update-rating', 100)
-}
+<template>
+  <input type="text" v-model="model" />
+</template>
+```
+
+这里我们以前面的星级评分为例：
+
+```js
+const [model, modifiers] = defineModel({
+  required: true,
+  // 这个就是一个 setter，回头子组件在修改值的时候，就会走这个 setter
+  set(value) {
+    console.log(value)
+    if (modifiers.number) {
+      if (isNaN(value)) {
+        value = 0
+      } else {
+        value = Number(value)
+      }
+      if (value < 0) {
+        value = 0
+      } else if (value > 5) {
+        value = 5
+      }
+      return value
+    }
+  }
+})
 ```
 
 ---
