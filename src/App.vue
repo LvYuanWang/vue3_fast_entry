@@ -1,32 +1,113 @@
 <template>
   <div id="app">
-    <h1>请对本次服务评分: </h1>
-    <!-- <Rating v-model="starNum" /> -->
-
-    <!-- 如果需要传递的值有多个, 则可以设置别名 -->
-    <!-- <Rating v-model:starNum="starNum" /> -->
-
-    <!-- 当然也可以使用修饰符(没有特定的作用) -->
-    <Rating v-model:starNum.number="starNum" />
-    <p v-show="starNum > 0">您当前的评级为: {{ starNum }} 颗星</p>
+    <!-- 具名插槽 -->
+    <Card>
+      <template #header>
+        <div class="header">今日壁纸分享</div>
+      </template>
+      <div class="body">
+        <img src="./assets/蜘蛛侠.jpg" alt="蜘蛛侠" />
+        <div class="wallpaper-info">
+          <span>帅帅帅, 帅呆了!!!</span>
+        </div>
+      </div>
+      <template #footer>
+        <div class="footer">2025/1/13</div>
+      </template>
+    </Card>
+    <!-- 动态插槽 -->
+    <div class="switch-slot">
+      <Card>
+        <div class="body">
+          <img src="./assets/海贼王图片.png" alt="海贼王" />
+          <div class="wallpaper-info">
+            <span>我是要成为海贼王的男人！ ——蒙奇·d·路飞</span>
+          </div>
+        </div>
+        <template #[switchSlot]>
+          <div class="footer">2025/1/13</div>
+        </template>
+      </Card>
+      <button @click="toggleSlot">show card header/footer</button>
+    </div>
+    <!-- 作用域插槽 -->
+    <ShowBox>
+      <template #title="{ title }">{{ title }}</template>
+      <template #default="{ src }">
+        <img :src="src" />
+      </template>
+    </ShowBox>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import Rating from './components/Rating.vue';
+import Card from './components/Card.vue';
+import ShowBox from './components/ShowBox.vue';
 
-const starNum = ref(0);
+const switchSlot = ref('footer');
+// 切换插槽
+const toggleSlot = () => {
+  switchSlot.value = switchSlot.value === 'footer' ? 'header' : 'footer';
+};
 </script>
 
 <style scoped>
 #app {
-  width: 70%;
-  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
 
-p {
-  font-size: 18px;
-  color: #333;
+.header {
+  padding: 5px;
+  font-size: 23px;
+  font-weight: bold;
+}
+
+img {
+  width: 100%;
+  height: auto;
+}
+
+.wallpaper-info {
+  padding: 5px;
+  font-size: 16px;
+}
+
+.footer {
+  padding: 5px;
+  text-align: right;
+  font-size: 12px;
+}
+
+.switch-slot {
+  text-align: center;
+}
+
+.switch-slot button {
+  padding: 5px 10px;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  margin-top: 5px;
+  cursor: pointer;
+  transition: all .4s;
+}
+
+.switch-slot button:hover {
+  background-color: rgb(177, 88, 177);
+  color: white;
+}
+
+.switch-slot .body {
+  padding: 5px;
+}
+
+.switch-slot .body>div {
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: purple;
 }
 </style>
