@@ -10,14 +10,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
 
 const dataArr = ref([
-  { id: 1, title: "以绝望挥剑,着逝者为铠! —— 《铠》", src: "./src/assets/机甲.jpg" },
-  { id: 2, title: "心怀不惧,才能翱翔于天际! —— 《赵云》", src: "./src/assets/机械武士.jpg" },
-  { id: 3, title: "无论发生什么,一切都是最好的安排! —— 《铠甲勇士》", src: "./src/assets/铠甲.jpg" },
-  { id: 3, title: "这是最好的时代，这是最坏的时代! —— 《李信》", src: "./src/assets/科技.jpg" }
-]);
+  { id: 1, title: '以绝望挥剑,着逝者为铠! —— 《铠》', src: './src/assets/机甲.jpg' },
+  { id: 2, title: '心怀不惧,才能翱翔于天际! —— 《赵云》', src: './src/assets/机械武士.jpg' },
+  {
+    id: 3,
+    title: '无论发生什么,一切都是最好的安排! —— 《铠甲勇士》',
+    src: './src/assets/铠甲.jpg',
+  },
+  { id: 3, title: '这是最好的时代，这是最坏的时代! —— 《李信》', src: './src/assets/科技.jpg' },
+])
 </script>
 
 <style scoped>
@@ -31,6 +35,7 @@ const dataArr = ref([
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  margin-bottom: 10px;
 }
 
 .title {
