@@ -1,6 +1,6 @@
 <template>
   <div class="home-container">
-    <h1>这是 Home 页面</h1>
+    <h1>这是 Home 组件页面</h1>
     <div class="content-box">
       <Card>
         <template #header>

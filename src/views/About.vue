@@ -1,6 +1,6 @@
 <template>
   <div class="about-container">
-    <h1>这是 About 页面</h1>
+    <h1>这是 About 组件页面</h1>
     <ShowBox>
       <template #title="{ title }">{{ title }}</template>
       <template #default="{ src }">
