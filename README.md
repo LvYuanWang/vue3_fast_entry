@@ -1,320 +1,138 @@
-# 插槽
+# 状态管理库
 
-有些时候，我们有这样的需求：父组件需要向子组件传递模板内容，这个时候显然使用前面的 Props 是无法做到的，此时就需要本节课所介绍的插槽。
+## 状态管理库基本介绍
 
-要使用插槽非常简单，首先在书写子组件的时候，添加上 slot 相当于就是设置了插槽，回头父组件在使用子组件的时候，在子组件元素之间书写的内容就会被插入到子组件 slot 的地方。
+所谓状态管理库，就是用于**管理一个应用中组件的状态**的。
 
-<img src="https://xiejie-typora.oss-cn-chengdu.aliyuncs.com/2024-04-16-075336.png" alt="image-20240416155335459" style="zoom:50%;" />
+传统方式组件之间传递状态:
+
+- 父传子用 Props
+- 子传父用 Emit
+
+这种方式存在的问题？
+
+如果你的应用的规模一旦慢慢变大，那么不同层级之间组件的状态传递，就会变得非常的麻烦。
+
+<img src="https://xiejie-typora.oss-cn-chengdu.aliyuncs.com/2024-04-17-000956.jpg" alt="15633343660460" style="zoom:50%;" />
+
+状态管理库如何解决这个问题的？
+
+在状态管理库中，会有一个统一的地方（数据仓库）管理所有的状态，这个时候组件之间要进行状态的传递，只需要一个组件将状态提交到仓库，然后另一个组件从仓库获取最新的状态即可。
+
+<img src="https://xiejie-typora.oss-cn-chengdu.aliyuncs.com/2024-04-17-001919.jpg" alt="15633438778868" style="zoom:50%;" />
+
+## Vue生态的状态管理库
+
+目前，Vue 生态官方所推荐的状态管理库是 Pinia，这是目前最新的状态管理库，用于替代以前的 Vuex 的，因此我们也是以 Pinia 为主，介绍这个最新的状态管理库。
+
+Pinia ，发音为 /piːnjʌ/，来源于西班牙语 piña 。意思为菠萝，表示与菠萝一样，由很多小块组成。在 Pinia 中，**每个 Store 都是单独存在**，一同进行状态管理。
+
+Pinia 是由 Vue.js 团队成员开发，最初是在 2019 年 11 月左右作为**一项实验性工作**提出的，目的是为了使用 Composition API 重新设计 Vuex，探索 Vuex 下一次迭代会是什么样子。但是 Pinia 在设计之初就倾向于同时支持 Vue 2 和 Vue 3，并且不强制要求开发者使用组合式 API。在探索的过程中，Pinia 实现了 Vuex5 提案的大部分内容，于是就直接取而代之了。
+
+目前 Vue 官方已经宣布 Pinia 就是新一代的 Vuex，但是为了尊重作者本人，名字保持不变，仍然叫做 Pinia。
+
+与之前的 Vuex 相比，Pinia 提供了更简单的 API，更少的规范，以及 _Composition-API_ 风格的 API 。更重要的是，与 _TypeScript_ 一起使用具有可靠的类型推断支持。
+
+Pinia 官网地址：https://pinia.vuejs.org/
+
+<img src="https://xiejie-typora.oss-cn-chengdu.aliyuncs.com/2023-03-21-093840.png" alt="image-20230321173840739" style="zoom:50%;" />
+
+对比之前的 Vuex，Pinia 具有如下的特点：
+
+1. **mutations 不复存在**。只有 state 、getters 、actions
+2. actions 中支持**同步**和**异步**方法修改 state 状态
+3. 与 TypeScript 一起使用具有可靠的类型推断支持
+4. **不再有模块嵌套**，只有 Store 的概念，Store 之间可以相互调用
+5. **支持插件扩展**，可以非常方便实现本地存储等功能
+6. 更加**轻量**，压缩后体积只有 2kb 左右
 
 ## 快速入门
 
-首先是子组件 Card.vue
+首先第一步仍然是安装
+
+```bash
+npm install pinia
+```
+
+接下来，需要在 Vue 应用中挂载 Pinia
+
+```js
+import { createApp } from 'vue'
+// 引入了根组件
+import App from './App.vue'
+import { createPinia } from 'pinia'
+
+// 挂载根组件
+const app = createApp(App)
+// 创建一个 pinia 的实例
+const pinia = createPinia()
+
+app.use(pinia).mount('#app')
+```
+
+下一步就是创建数据仓库。src 目录下面创建一个 stores 是目录，该目录是数据仓库目录，下面可以对应多个数据仓库，每个数据仓库就是一个 JS 文件。
+
+注意名字一般叫做 useXXXStore：
+
+```js
+import { defineStore } from 'pinia'
+
+export const useCounterStore = defineStore('counter', {
+  // 定义数据状态
+  state: () => {
+    return {
+      count: 0,
+    }
+  },
+  // 定义了修改数据状态的两个方法
+  actions: {
+    increment() {
+      this.count++
+    },
+    decrement() {
+      this.count--
+    },
+  },
+})
+```
+
+通过 defineStore 方法来创建一个数据仓库，该方法接收两个参数：
+
+- 仓库名称
+- 配置对象，在该配置对象里面就可以定义 state、getters、actions
+
+最后就可以在组件中，使用数据仓库里面的状态：
 
 ```vue
 <template>
-  <div class="card">
-    <!-- 卡片的头部 -->
-    <div class="card-header">
-      <!-- 具名插槽 -->
-      <slot name="header"></slot>
-    </div>
-    <!-- 卡片的内容 -->
-    <div class="card-body">
-      <!-- 默认插槽 -->
-      <slot></slot>
-    </div>
+  <div class="counter">
+    <h1>计数器：{{ conterStore.count }}</h1>
+    <button @click="conterStore.increment">增加</button>
+    <button @click="conterStore.decrement">减少</button>
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { useCounterStore } from './stores/useCounterStore.js'
+// 获取数据仓库
+const conterStore = useCounterStore()
+</script>
 
 <style scoped>
-.card {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 300px;
-  margin: 20px;
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
-
-.card-header {
-  background-color: #f7f7f7;
-  border-bottom: 1px solid #ececec;
-  padding: 10px 15px;
+button {
+  padding: 10px 20px;
   font-size: 16px;
-  font-weight: bold;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-}
-
-.card-body {
-  padding: 15px;
-  font-size: 14px;
-  color: #333;
+  cursor: pointer;
 }
 </style>
 ```
 
-通过 slot 来设置插槽，上面的例子中，设置了两个插槽，一个是名为 header 的具名插槽，另外一个是默认插槽。
+---
 
-```vue
-<template>
-  <div>
-    <Card>
-      <!-- 中间的内容就会被放入到插槽里面 -->
-      <template v-slot:header>我的卡片标题</template>
-      这是卡片的内容
-    </Card>
-    <Card>
-      <template v-slot:header>探险摄影</template>
-      <div class="card-content">
-        <img src="./assets/landscape.jpeg" class="card-image" />
-        <p>探索未知的自然风光，记录下每一个令人惊叹的瞬间。加入我们的旅程，一起见证世界的壮丽。</p>
-      </div>
-    </Card>
-  </div>
-</template>
-
-<script setup>
-import Card from './components/Card.vue'
-</script>
-
-<style scoped>
-.card-image {
-  width: 100%; /* 让图片宽度充满卡片 */
-  height: auto; /* 保持图片的原始宽高比 */
-  border-bottom: 1px solid #ececec; /* 在图片和文本之间添加一条分隔线 */
-}
-</style>
-```
-
-父组件在插入模板内容的时候，可以通过 v-slot 来指定要插入到的具名插槽。如果没有指定，那么内容会被插入到默认插槽里面。
-
-
-
-## 插槽相关细节
-
-1. 插槽支持默认内容
-
-可以在 slot 标签之间写一些默认内容，如果父组件没有提供模板内容，那么会渲染默认内容。
-
-```vue
-<slot>这是默认插槽的默认值</slot>
-```
-
-
-
-2. 具名插槽
-
-插槽是可以有名字的，这意味着可以设置多个插槽，回头父组件可以根据不同的名字选择对应的内容插入到指定的插槽里面。
-
-父组件在指定名字的时候，使用 v-slot:插槽名
-
-```vue
-<template v-slot:header>探险摄影</template>
-```
-
-这里有一个简写，直接写成 #插槽名
-
-```vue
-<template #header>探险摄影</template>
-```
-
-![image-20240416155242559](https://xiejie-typora.oss-cn-chengdu.aliyuncs.com/2024-04-16-075242.png)
-
-另外，当组件同时接收默认插槽和具名插槽的时候，位于顶级的非 template 节点的内容会被放入到默认插槽里面。
-
-
-
-3. 父组件在指定插槽名的时候，可以是动态的
-
-```vue
-<template v-slot:[slotName]>探险摄影</template>
-```
-
-```vue
-<template #[slotName]>探险摄影</template>
-```
-
-
-
-## 作用域
-
-首先明确一个点：
-
-- 父组件模板中的表达式只能访问父组件的作用域下的数据
-- 子组件模板中的表达式只能访问子组件的作用域下的数据
-
-父组件
-
-```vue
-<template>
-  <div class="parent">
-    <h1>父组件的标题</h1>
-    <Card>
-      <!-- 插槽内容可以访问父组件的数据 -->
-      <template v-slot:default>
-        <p>这是父组件的数据：{{ parentData }}</p>
-        <!-- 以下行将会导致错误，因为试图在父组件中访问子组件的数据 -->
-        <p>尝试访问子组件的数据：{{ childData }}</p>
-      </template>
-    </Card>
-  </div>
-</template>
-
-<script setup>
-import Card from '@/components/Card.vue'
-import { ref } from 'vue'
-
-// 父组件的数据
-const parentData = ref('这是父组件的数据')
-</script>
-
-<style>
-.parent {
-  padding: 20px;
-}
-</style>
-```
-
-子组件
-
-```vue
-<template>
-  <div class="child">
-    <h2>子组件的标题</h2>
-    <!-- 这里的插槽将展示从父组件传递的内容 -->
-    <slot></slot>
-    <p>子组件数据：{{ childData }}</p>
-    <p>尝试访问父组件数据：{{ parentData }}</p>
-  </div>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-
-// 子组件的数据
-const childData = ref('这是子组件的数据')
-</script>
-
-<style>
-.child {
-  border: 1px solid #ccc;
-  padding: 20px;
-  margin-top: 20px;
-}
-</style>
-```
-
-有些时候，我们需要将子组件作用域下的数据通过 **插槽** 传递给父组件，这就涉及到作用域插槽。
-
-子组件：在设置插槽的时候，添加了一些动态属性
-
-```vue
-<!-- <MyComponent> 的模板 -->
-<div>
-  <slot :text="greetingMessage" :count="1"></slot>
-</div>
-```
-
-父组件：通过 v-slot 并且将值设置为 slotProps，这样就可以拿到子组件传递过来的数据
-
-```vue
-<MyComponent v-slot="slotProps">
-  {{ slotProps.text }} {{ slotProps.count }}
-</MyComponent>
-```
-
-如下图所示：
-
-<img src="https://xiejie-typora.oss-cn-chengdu.aliyuncs.com/2024-04-16-075301.png" alt="image-20240416155301318" style="zoom:50%;" />
-
-父组件在接收作用域插槽传递过来的数据的时候，也是能够解构的：
-
-```vue
-<MyComponent v-slot="{text, count}">
-  {{ text }} {{ count }}
-</MyComponent>
-```
-
-下面是一个关于作用域插槽的实际使用场景：
-
-子组件通过作用域插槽将数据传递给父组件：
-
-```vue
-<template>
-  <div class="list-container">
-    <ul>
-      <li v-for="item in items" :key="item.id">
-        <!-- li 里面渲染什么内容我不知道，通过父组件在使用的时候来指定 -->
-        <!-- 下面的插槽中，:item=item 就是将子组件的数据传递给父组件的插槽内容 -->
-        <slot name="item" :item="item">{{ item.defaultText }}</slot>
-      </li>
-    </ul>
-  </div>
-</template>
-
-<script setup>
-import { ref } from 'vue'
-
-// 子组件的数据，这个数据可能是通过请求得到的
-const items = ref([
-  { id: 1, name: 'Vue.js', defaultText: 'Vue.js 是一个渐进式 JavaScript 框架。' },
-  { id: 2, name: 'React', defaultText: 'React 是一个用于构建用户界面的 JavaScript 库。' },
-  { id: 3, name: 'Angular', defaultText: 'Angular 是一个开源的 Web 应用框架。' }
-])
-</script>
-
-<style>
-.list-container {
-  max-width: 300px;
-  background: #f9f9f9;
-  border: 1px solid #ccc;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  margin-bottom: 10px;
-  background: #fff;
-  padding: 10px;
-  border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-</style>
-```
-
-父组件通过 v-slot 来接收到子组件传递过来的数据内容
-
-```vue
-<template>
-  <div class="app-container">
-    <Card>
-      <template v-slot="{ item }">
-        <!-- 在父组件中来决定子组件的插槽内容 -->
-        <h3>{{ item.name }}</h3>
-        <p>{{ item.defaultText }}</p>
-      </template>
-    </Card>
-  </div>
-</template>
-
-<script setup>
-import Card from '@/components/Card.vue'
-</script>
-
-<style>
-.app-container {
-  padding: 20px;
-}
-</style>
-```
-
-关于上面的例子，官方还有一个叫法：无渲染组件
-
->一些组件可能只包括了逻辑而不需要自己渲染内容，视图输出通过作用域插槽全权交给了消费者组件。我们将这种类型的组件称为**无渲染组件**。
+-EOF-

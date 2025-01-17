@@ -1,17 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-import SwitchComponent from '@/views/SwitchComponent.vue';
-import Timer from '@/views/Timer.vue';
-import TextInput from '@/views/TextInput.vue';
+import StoreTotalData from '@/views/StoreTotalData.vue';
 import Counter from '@/views/Counter.vue';
 import CheckboxList from '@/views/CheckboxList.vue';
+import EditCheckboxList from '@/views/EditCheckboxList.vue';
 
 const routes = [
-  { path: '/',name: "SwitchComponent", component: SwitchComponent },
-  { path: '/timer', name: 'Timer', component: Timer },
-  { path: '/textInput', name: 'TextInput', component: TextInput },
+  { path: '/', name: 'StoreTotalData', component: StoreTotalData },
   { path: '/counter', name: 'Counter', component: Counter },
-  { path: '/checkboxList', name: 'CheckboxList', component: CheckboxList }
+  { path: '/checkboxList', name: 'CheckboxList', component: CheckboxList },
+  { path: '/editCheckboxList', component: EditCheckboxList }
 ];
 
 const router = createRouter({
