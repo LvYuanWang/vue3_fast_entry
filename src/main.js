@@ -1,7 +1,6 @@
 import './assets/main.css'
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from "@/router"
 import { createPinia } from 'pinia'
 
 const app = createApp(App);
@@ -11,4 +10,4 @@ app.config.globalProperties.Test = {
   msg: 'Hello from Test'
 }
 
-app.use(router).use(pinia).mount('#app');
+app.use(pinia).mount('#app');
