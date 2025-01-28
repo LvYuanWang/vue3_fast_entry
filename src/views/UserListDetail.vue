@@ -1,44 +1,87 @@
 <template>
-  <div class="details container">
-    <button class="btn btn-default" @click="navigateToUserList">返回</button>
-    <h1 class="page-header">
-      {{ user.name }}
-      <span class="pull-right">
-        <button class="btn btn-primary" @click="navigateToEdit" style="margin-right: 10px">
-          修改
-        </button>
-        <button class="btn btn-danger" @click="deleteUser">删除</button>
-      </span>
-    </h1>
-    <!-- 第一组 -->
-    <ul class="list-group">
-      <li class="list-group-item">
-        <span class="glyphicon glyphicon-phone">电话：{{ user.phone }}</span>
-      </li>
-      <li class="list-group-item">
-        <span class="glyphicon glyphicon-envelope">邮箱：{{ user.email }}</span>
-      </li>
-    </ul>
-    <!-- 第二组 -->
-    <ul class="list-group">
-      <li class="list-group-item">
-        <span class="glyphicon glyphicon-book">文化水平：{{ user.education }}</span>
-      </li>
-      <li class="list-group-item">
-        <span class="glyphicon glyphicon-flag">毕业院校：{{ user.graduationschool }}</span>
-      </li>
-      <li class="list-group-item">
-        <span class="glyphicon glyphicon-briefcase">专业：{{ user.profession }}</span>
-      </li>
-      <li class="list-group-item">
-        <span class="glyphicon glyphicon-user">个人简介：{{ user.profile }}</span>
-      </li>
-    </ul>
-  </div>
+  <el-button type="success" :icon="Back" @click="navigateToUserList">返回</el-button>
+  <el-card style="margin-top: 28px">
+    <template #header>
+      <div class="header-container">
+        <el-text size="large" tag="b" style="font-size: 24px">{{ user.name }}</el-text>
+        <div>
+          <el-button type="primary" @click="navigateToEdit" :icon="Edit" circle size="large" />
+          <el-button type="danger" @click="deleteUser" :icon="Delete" circle size="large" />
+        </div>
+      </div>
+    </template>
+    <el-descriptions label-width="200" column="1" border>
+      <el-descriptions-item>
+        <template #label>
+          <div class="cell-item">
+            <el-icon style="margin-right: 10px"><Iphone /></el-icon>
+            电话:
+          </div>
+        </template>
+        {{ user.phone }}
+      </el-descriptions-item>
+      <el-descriptions-item>
+        <template #label>
+          <div class="cell-item">
+            <el-icon style="margin-right: 10px"><Message /></el-icon>
+            邮箱:
+          </div>
+        </template>
+        {{ user.email }}
+      </el-descriptions-item>
+      <el-descriptions-item>
+        <template #label>
+          <div class="cell-item">
+            <el-icon style="margin-right: 10px"><Flag /></el-icon>
+            文化水平:
+          </div>
+        </template>
+        {{ user.education }}
+      </el-descriptions-item>
+      <el-descriptions-item>
+        <template #label>
+          <div class="cell-item">
+            <el-icon style="margin-right: 10px"><School /></el-icon>
+            毕业院校:
+          </div>
+        </template>
+        {{ user.graduationschool }}
+      </el-descriptions-item>
+      <el-descriptions-item>
+        <template #label>
+          <div class="cell-item">
+            <el-icon style="margin-right: 10px"><Service /></el-icon>
+            专业:
+          </div>
+        </template>
+        {{ user.profession }}
+      </el-descriptions-item>
+    </el-descriptions>
+    <template #footer>
+      <div style="display: flex; gap: 10px">
+        <el-tag effect="dark">
+          <el-icon><ChatLineRound /></el-icon>
+          个人简介:
+        </el-tag>
+        <el-text tag="b" type="success">{{ user.profile }}</el-text>
+      </div>
+    </template>
+  </el-card>
 </template>
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
+import {
+  Back,
+  Edit,
+  Delete,
+  Iphone,
+  Message,
+  Flag,
+  School,
+  Service,
+  ChatLineRound,
+} from '@element-plus/icons-vue'
 import { onMounted, reactive } from 'vue'
 import { getUserByIdApi, deleteUserByIdApi } from '@/api/userApi'
 
@@ -89,4 +132,13 @@ function deleteUser() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.header-container {
+  display: flex;
+  justify-content: space-between;
+}
+.cell-item {
+  display: flex;
+  align-items: center;
+}
+</style>

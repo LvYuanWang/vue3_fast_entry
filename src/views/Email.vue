@@ -1,7 +1,18 @@
 <template>
-  <div>邮箱: xx@qq.com</div>
+  <el-card>
+    <div class="email-container">
+      <el-tag effect="dark" type="success">邮箱: </el-tag>
+      <el-text tag="ins">LvYuanWang1314@qq.com</el-text>
+    </div>
+  </el-card>
 </template>
 
 <script setup></script>
 
-<style lang="scss" scoped></style>
+<style scoped>
+.email-container {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+</style>

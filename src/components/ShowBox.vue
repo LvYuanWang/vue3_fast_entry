@@ -1,12 +1,12 @@
 <template>
-  <div class="show-box-container" v-for="info in dataArr" :key="info.id">
-    <div class="title">
+  <el-card class="show-box-container" v-for="info in dataArr" :key="info.id">
+    <template #header>
       <slot name="title" :title="info.title">Header Info</slot>
-    </div>
-    <div class="body">
+    </template>
+    <template #default>
       <slot :src="info.src">This is ShowBox body container info</slot>
-    </div>
-  </div>
+    </template>
+  </el-card>
 </template>
 
 <script setup>
@@ -30,11 +30,6 @@ const dataArr = ref([
 }
 
 .show-box-container {
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   margin-bottom: 10px;
 }
 

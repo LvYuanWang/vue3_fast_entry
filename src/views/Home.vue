@@ -2,7 +2,7 @@
   <div class="home-container">
     <h1>主页</h1>
     <div class="content-box">
-      <Card>
+      <el-card>
         <template #header>
           <div class="header">今日壁纸分享</div>
         </template>
@@ -15,9 +15,9 @@
         <template #footer>
           <div class="footer">2025/1/13</div>
         </template>
-      </Card>
+      </el-card>
       <div class="switch-slot">
-        <Card>
+        <el-card>
           <div class="body">
             <img src="../assets/海贼王图片.png" alt="海贼王" />
             <div class="wallpaper-info">
@@ -27,7 +27,7 @@
           <template #[switchSlot]>
             <div class="footer">2025/1/13</div>
           </template>
-        </Card>
+        </el-card>
         <button @click="toggleSlot">show card header/footer</button>
       </div>
     </div>
@@ -36,7 +36,6 @@
 </template>
 
 <script setup>
-import Card from '@/components/Card.vue'
 import { ref } from 'vue'
 
 const switchSlot = ref('footer')
@@ -59,12 +58,9 @@ img {
 }
 
 .header {
-  background-color: #f0f0f0;
-  border-bottom: 1px solid #ccc;
   font-weight: bold;
   text-align: center;
   font-size: 14px;
-  padding: 5px 0;
 }
 
 .wallpaper-info {
@@ -73,7 +69,6 @@ img {
 }
 
 .footer {
-  padding: 5px;
   text-align: right;
   font-size: 12px;
 }

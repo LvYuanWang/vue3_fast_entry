@@ -1,42 +1,84 @@
 <template>
-  <div id="app" class="container">
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button
-            type="button"
-            class="navbar-toggle collapsed"
-            data-toggle="collapse"
-            data-target="#navbar"
-            aria-expanded="false"
-            aria-controls="navbar"
-          >
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <div class="navbar-brand">用户管理系统</div>
-        </div>
-        <div id="navbar" class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <router-link to="/home" class="navigation">主页</router-link>
-            <router-link to="/userList" class="navigation">用户列表</router-link>
-            <router-link to="/detail" class="navigation">详情</router-link>
-            <router-link to="/about" class="navigation">关于我们</router-link>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <router-link to="/add" class="navigation">添加用户</router-link>
-          </ul>
-        </div>
-      </div>
-    </nav>
-    <!-- 由 vue-router 这个库提供的 -->
-    <!-- 路由所匹配上的组件，会渲染到这个位置 -->
-    <router-view class="content" />
+  <div id="app">
+    <el-container class="container">
+      <el-header class="title">用户管理系统</el-header>
+      <el-container class="box">
+        <el-aside width="200px" class="nav">
+          <div class="links-container">
+            <router-link
+              v-for="(route, index) in routes"
+              :key="index"
+              :to="`/${route.route}`"
+              class="navigation"
+            >
+              <el-button size="large" color="#001529" :plain="!route.route.includes(currentPath)">{{
+                route.name
+              }}</el-button>
+            </router-link>
+          </div>
+        </el-aside>
+        <el-main class="main">
+          <router-view />
+        </el-main>
+      </el-container>
+    </el-container>
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
-<style scoped></style>
+const route = useRoute()
+
+const currentPath = ref(null)
+
+const routes = [
+  { route: 'home', name: '主页' },
+  { route: 'userList', name: '用户列表' },
+  { route: 'detail', name: '详情' },
+  { route: 'add', name: '添加用户' },
+  { route: 'about', name: '关于我们' },
+]
+
+watch(route, () => {
+  const fullPath = route.fullPath
+  const lastIndex = fullPath.indexOf('/', 1) !== -1 ? fullPath.indexOf('/', 1) : fullPath.length
+  currentPath.value = fullPath.slice(1, lastIndex)
+})
+</script>
+
+<style scoped>
+.title {
+  color: #fff;
+  font-size: 24px;
+  background-color: #409eff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.box {
+  overflow: hidden;
+  height: 100%;
+}
+
+.container {
+  height: 100vh;
+}
+
+.nav {
+  background-color: #304156ba;
+}
+
+.links-container {
+  display: grid;
+}
+
+.links-container button {
+  margin: 0;
+  width: 100%;
+  border: none;
+  border-radius: 0;
+}
+</style>
